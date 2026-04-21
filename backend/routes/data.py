@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import uuid
 from datetime import datetime
 
@@ -17,6 +18,12 @@ from services.data_service import (
     normalize_l2,
     standardize,
 )
+
+_UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
+
+
+def _valid_uuid(value):
+    return bool(_UUID_RE.match(str(value)))
 
 data_bp = Blueprint("data", __name__, url_prefix="/api/data")
 
@@ -49,8 +56,11 @@ def _save_numpy(array, cell_names, feature_names, dataset_id):
 
 
 def _load_dataset_array(dataset_id):
-    np_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}.npy")
-    meta_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}_meta.json")
+    if not _valid_uuid(dataset_id):
+        return None, None, None
+    safe_id = os.path.basename(dataset_id)
+    np_path = os.path.join(Config.UPLOAD_FOLDER, f"{safe_id}.npy")
+    meta_path = os.path.join(Config.UPLOAD_FOLDER, f"{safe_id}_meta.json")
     if not os.path.exists(np_path):
         return None, None, None
     array = np.load(np_path)
@@ -91,10 +101,10 @@ def upload():
             return jsonify({"error": validation["message"]}), 422
 
         _save_numpy(array, cell_names, feature_names, dataset_id)
-    except Exception as e:
+    except Exception:
         if os.path.exists(upload_path):
             os.remove(upload_path)
-        return jsonify({"error": f"Failed to parse file: {str(e)}"}), 422
+        return jsonify({"error": "Failed to parse file. Check format and content."}), 422
 
     db = _read_db()
     db[dataset_id] = {
@@ -192,6 +202,8 @@ def get_dataset(dataset_id):
 @data_bp.route("/datasets/<dataset_id>", methods=["DELETE"])
 @jwt_required()
 def delete_dataset(dataset_id):
+    if not _valid_uuid(dataset_id):
+        return jsonify({"error": "Invalid dataset ID"}), 400
     user_id = get_jwt_identity()
     db = _read_db()
     ds = db.get(dataset_id)
@@ -200,9 +212,10 @@ def delete_dataset(dataset_id):
     if ds["owner"] != user_id:
         return jsonify({"error": "Forbidden"}), 403
 
+    safe_id = os.path.basename(dataset_id)
     # Remove files
     for suffix in [".npy", "_meta.json"]:
-        p = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}{suffix}")
+        p = os.path.join(Config.UPLOAD_FOLDER, f"{safe_id}{suffix}")
         if os.path.exists(p):
             os.remove(p)
     if ds.get("original_file") and os.path.exists(ds["original_file"]):

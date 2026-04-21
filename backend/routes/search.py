@@ -125,10 +125,10 @@ def query():
 
     try:
         distances, indices, query_time_ms = _run_search(index_meta, query_vector, k)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": f"Search failed: {str(e)}"}), 500
+    except ValueError:
+        return jsonify({"error": "Invalid query vector: dimension mismatch or bad values."}), 400
+    except Exception:
+        return jsonify({"error": "Search failed. Check index and query vector."}), 500
 
     results = []
     for rank, (dist, idx) in enumerate(zip(distances, indices), start=1):
@@ -199,8 +199,8 @@ def query_by_id():
 
     try:
         distances, indices, query_time_ms = _run_search(index_meta, query_vector, k + 1)
-    except Exception as e:
-        return jsonify({"error": f"Search failed: {str(e)}"}), 500
+    except Exception:
+        return jsonify({"error": "Search failed. Check index and query."}), 500
 
     results = []
     rank = 1

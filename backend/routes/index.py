@@ -103,8 +103,8 @@ def build_index():
             save_faiss_index(idx, index_path + ".faiss")
             stored_path = index_path + ".faiss"
         build_time = round(time.time() - start, 3)
-    except Exception as e:
-        return jsonify({"error": f"Failed to build index: {str(e)}"}), 500
+    except Exception:
+        return jsonify({"error": "Failed to build index. Check dataset validity."}), 500
 
     db = _read_db()
     db[index_id] = {
