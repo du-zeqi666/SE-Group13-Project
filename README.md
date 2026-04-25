@@ -1,4 +1,5 @@
 # SE-Group13-Project
+
 该项目为南开大学2025-2026春季学年，刘健老师课程班级第13小组大作业
 
 ---
@@ -30,11 +31,12 @@ A full-stack web application for **Approximate Nearest Neighbor (ANN) search** o
 
 ## Tech Stack
 
-| Layer    | Technologies |
-|----------|-------------|
+
+| Layer    | Technologies                                                                      |
+| -------- | --------------------------------------------------------------------------------- |
 | Backend  | Python 3.9+, Flask 2.3, Flask-JWT-Extended, FAISS-CPU, Annoy, NumPy, Pandas, h5py |
-| Frontend | React 18, React Router 6, Material UI 5, Recharts, Axios |
-| Storage  | JSON flat files + NumPy `.npy` arrays (no database required) |
+| Frontend | React 18, React Router 6, Material UI 5, Recharts, Axios                          |
+| Storage  | JSON flat files + NumPy`.npy` arrays (no database required)                       |
 
 ---
 
@@ -51,6 +53,12 @@ A full-stack web application for **Approximate Nearest Neighbor (ANN) search** o
 
 ```bash
 cd backend
+
+# 使用虚拟环境
+python3 -m venv venv
+venv\Scripts\activate    # Windows
+# source venv/bin/activate  # Linux/Mac
+
 pip install -r requirements.txt
 python app.py
 ```
@@ -87,8 +95,11 @@ The React dev server starts at `http://localhost:3000`.
 All endpoints are prefixed with `/api`.
 
 ### Auth  `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me`
+
 ### Data  `POST /api/data/upload` · `POST /api/data/generate_demo` · `GET /api/data/datasets` · `DELETE /api/data/datasets/<id>` · `POST /api/data/datasets/<id>/preprocess`
+
 ### Index `POST /api/index/build` · `GET /api/index/list` · `GET /api/index/<id>` · `DELETE /api/index/<id>`
+
 ### Search `POST /api/search/query` · `POST /api/search/query_by_id` · `GET /api/search/history`
 
 ---
