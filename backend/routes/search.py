@@ -1,4 +1,3 @@
-import json
 import os
 import time
 import uuid
@@ -9,6 +8,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from config import Config
+from models import db
+from models.metadata import SearchHistory, SearchIndex
 from services.ann_service import (
     search_faiss_index,
     search_annoy_index,
@@ -22,58 +23,51 @@ search_bp = Blueprint("search", __name__, url_prefix="/api/search")
 MAX_HISTORY = 10
 
 
-def _read_index_db():
-    if not os.path.exists(Config.INDEX_DB_PATH):
-        return {}
-    try:
-        with open(Config.INDEX_DB_PATH, "r") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError):
-        return {}
-
-
 def _load_dataset_array(dataset_id):
     np_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}.npy")
     meta_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}_meta.json")
     if not os.path.exists(np_path):
         return None, None, None
+    import json
     array = np.load(np_path)
     with open(meta_path, "r") as f:
         meta = json.load(f)
     return array, meta["cell_names"], meta["feature_names"]
 
 
-def _read_history():
-    if not os.path.exists(Config.SEARCH_HISTORY_PATH):
-        return {}
-    try:
-        with open(Config.SEARCH_HISTORY_PATH, "r") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError):
-        return {}
-
-
-def _write_history(data):
-    os.makedirs(os.path.dirname(Config.SEARCH_HISTORY_PATH), exist_ok=True)
-    with open(Config.SEARCH_HISTORY_PATH, "w") as f:
-        json.dump(data, f, indent=2)
-
-
 def _add_to_history(user_id, entry):
-    history = _read_history()
-    user_history = history.get(user_id, [])
-    user_history.insert(0, entry)
-    history[user_id] = user_history[:MAX_HISTORY]
-    _write_history(history)
+    history_entry = SearchHistory(
+        id=entry["id"],
+        user_id=user_id,
+        entry_type=entry["type"],
+        index_id=entry["index_id"],
+        cell_id=entry.get("cell_id"),
+        k=entry["k"],
+        query_time_ms=entry["query_time_ms"],
+        timestamp=datetime.utcnow(),
+    )
+    db.session.add(history_entry)
+    db.session.flush()
+
+    stale_entries = (
+        SearchHistory.query.filter_by(user_id=user_id)
+        .order_by(SearchHistory.timestamp.desc())
+        .offset(MAX_HISTORY)
+        .all()
+    )
+    for stale_entry in stale_entries:
+        db.session.delete(stale_entry)
+
+    db.session.commit()
 
 
 def _run_search(index_meta, query_vector, k):
     """Load index and perform ANN search. Returns (distances, indices, query_time_ms)."""
-    index_type = index_meta["index_type"]
-    index_path = index_meta["index_path"]
-    metric = index_meta["metric"]
-    n_features = index_meta["n_features"]
-    n_cells = index_meta["n_cells"]
+    index_type = index_meta.index_type
+    index_path = index_meta.index_path
+    metric = index_meta.metric
+    n_features = index_meta.n_features
+    n_cells = index_meta.n_cells
 
     query = np.array(query_vector, dtype=np.float32)
     if len(query) != n_features:
@@ -112,14 +106,11 @@ def query():
     if k < 1 or k > 1000:
         return jsonify({"error": "k must be between 1 and 1000"}), 400
 
-    index_db = _read_index_db()
-    index_meta = index_db.get(index_id)
+    index_meta = SearchIndex.query.filter_by(id=index_id, owner_id=user_id).first()
     if not index_meta:
         return jsonify({"error": "Index not found"}), 404
-    if index_meta["owner"] != user_id:
-        return jsonify({"error": "Forbidden"}), 403
 
-    _, cell_names, _ = _load_dataset_array(index_meta["dataset_id"])
+    _, cell_names, _ = _load_dataset_array(index_meta.dataset_id)
     if cell_names is None:
         return jsonify({"error": "Dataset data not found"}), 404
 
@@ -153,7 +144,7 @@ def query():
         "results": results,
         "query_time_ms": query_time_ms,
         "k": k,
-        "metric": metric or index_meta["metric"],
+        "metric": metric or index_meta.metric,
     })
 
 
@@ -172,14 +163,11 @@ def query_by_id():
     if cell_id is None:
         return jsonify({"error": "cell_id is required"}), 400
 
-    index_db = _read_index_db()
-    index_meta = index_db.get(index_id)
+    index_meta = SearchIndex.query.filter_by(id=index_id, owner_id=user_id).first()
     if not index_meta:
         return jsonify({"error": "Index not found"}), 404
-    if index_meta["owner"] != user_id:
-        return jsonify({"error": "Forbidden"}), 403
 
-    array, cell_names, _ = _load_dataset_array(index_meta["dataset_id"])
+    array, cell_names, _ = _load_dataset_array(index_meta.dataset_id)
     if array is None:
         return jsonify({"error": "Dataset data not found"}), 404
 
@@ -232,7 +220,7 @@ def query_by_id():
         "results": results,
         "query_time_ms": query_time_ms,
         "k": k,
-        "metric": index_meta["metric"],
+        "metric": index_meta.metric,
         "query_cell": cell_names[idx] if idx < len(cell_names) else str(idx),
     })
 
@@ -241,5 +229,10 @@ def query_by_id():
 @jwt_required()
 def history():
     user_id = get_jwt_identity()
-    hist = _read_history()
-    return jsonify(hist.get(user_id, []))
+    history_entries = (
+        SearchHistory.query.filter_by(user_id=user_id)
+        .order_by(SearchHistory.timestamp.desc())
+        .limit(MAX_HISTORY)
+        .all()
+    )
+    return jsonify([entry.to_dict() for entry in history_entries])

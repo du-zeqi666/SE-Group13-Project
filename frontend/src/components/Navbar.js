@@ -11,10 +11,11 @@ import {
 } from '@mui/material';
 import ScatterPlotIcon from '@mui/icons-material/ScatterPlot';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useAuth } from '../App';
+import { useAuth, useI18n } from '../App';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { t, toggleLanguage } = useI18n();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -31,16 +32,19 @@ export default function Navbar() {
         </Typography>
         <Box sx={{ flexGrow: 1, display: 'flex', gap: 1 }}>
           <Button color="inherit" component={RouterLink} to="/dashboard">
-            Dashboard
+            {t('nav.dashboard')}
           </Button>
           <Button color="inherit" component={RouterLink} to="/search">
-            Search
+            {t('nav.search')}
           </Button>
         </Box>
+        <Button color="inherit" onClick={toggleLanguage} sx={{ mr: 1 }}>
+          {t('nav.switchLanguage')}
+        </Button>
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2">{user.username}</Typography>
-            <Tooltip title="Logout">
+            <Tooltip title={t('nav.logout')}>
               <IconButton color="inherit" onClick={handleLogout} size="small">
                 <LogoutIcon />
               </IconButton>

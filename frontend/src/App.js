@@ -5,6 +5,7 @@ import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import SearchPage from './pages/SearchPage';
 import { getMe } from './api/client';
+import { translate } from './i18n';
 
 const theme = createTheme({
   palette: {
@@ -14,9 +15,14 @@ const theme = createTheme({
 });
 
 export const AuthContext = createContext(null);
+export const LanguageContext = createContext(null);
 
 export function useAuth() {
   return useContext(AuthContext);
+}
+
+export function useI18n() {
+  return useContext(LanguageContext);
 }
 
 function ProtectedRoute({ children }) {
@@ -28,6 +34,7 @@ function ProtectedRoute({ children }) {
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'en');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -43,6 +50,10 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem('language', language);
+  }, [language]);
+
   const login = (token, userData) => {
     localStorage.setItem('token', token);
     setUser(userData);
@@ -53,41 +64,49 @@ export default function App() {
     setUser(null);
   };
 
+  const toggleLanguage = () => {
+    setLanguage((current) => (current === 'en' ? 'zh' : 'en'));
+  };
+
+  const t = (key, variables) => translate(language, key, variables);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Routes>
-          <Route path="/login" element={<AuthPage mode="login" />} />
-          <Route path="/register" element={<AuthPage mode="register" />} />
-          <Route
-            path="/"
-            element={
-              loading ? null : user ? (
-                <Navigate to="/dashboard" replace />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/search"
-            element={
-              <ProtectedRoute>
-                <SearchPage />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </ThemeProvider>
-    </AuthContext.Provider>
+    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>
+      <AuthContext.Provider value={{ user, loading, login, logout }}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Routes>
+            <Route path="/login" element={<AuthPage mode="login" />} />
+            <Route path="/register" element={<AuthPage mode="register" />} />
+            <Route
+              path="/"
+              element={
+                loading ? null : user ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/search"
+              element={
+                <ProtectedRoute>
+                  <SearchPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </ThemeProvider>
+      </AuthContext.Provider>
+    </LanguageContext.Provider>
   );
 }

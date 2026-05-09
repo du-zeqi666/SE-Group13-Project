@@ -10,10 +10,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { login as apiLogin } from '../api/client';
-import { useAuth } from '../App';
+import { useAuth, useI18n } from '../App';
 
 export default function Login() {
   const { login } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
@@ -25,7 +26,7 @@ export default function Login() {
     e.preventDefault();
     setError('');
     if (!form.username || !form.password) {
-      setError('Please fill in all fields.');
+      setError(t('login.fillAll'));
       return;
     }
     setLoading(true);
@@ -34,7 +35,7 @@ export default function Login() {
       login(res.data.access_token, res.data.user);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      setError(err.response?.data?.error || t('login.failed'));
     } finally {
       setLoading(false);
     }
@@ -43,14 +44,14 @@ export default function Login() {
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
       <Typography component="h1" variant="h5" gutterBottom>
-        Sign In
+        {t('login.title')}
       </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <TextField
         margin="normal"
         required
         fullWidth
-        label="Username"
+        label={t('login.username')}
         name="username"
         autoComplete="username"
         autoFocus
@@ -61,7 +62,7 @@ export default function Login() {
         margin="normal"
         required
         fullWidth
-        label="Password"
+        label={t('login.password')}
         name="password"
         type="password"
         autoComplete="current-password"
@@ -76,10 +77,10 @@ export default function Login() {
         disabled={loading}
         startIcon={loading ? <CircularProgress size={20} /> : null}
       >
-        {loading ? 'Signing In…' : 'Sign In'}
+        {loading ? t('login.submitting') : t('login.submit')}
       </Button>
       <Link component={RouterLink} to="/register" variant="body2">
-        {"Don't have an account? Sign Up"}
+        {t('login.switchLink')}
       </Link>
     </Box>
   );

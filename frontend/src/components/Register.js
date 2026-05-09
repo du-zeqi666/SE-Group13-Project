@@ -10,10 +10,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { register as apiRegister } from '../api/client';
-import { useAuth } from '../App';
+import { useAuth, useI18n } from '../App';
 
 export default function Register() {
   const { login } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     username: '',
@@ -30,15 +31,15 @@ export default function Register() {
     e.preventDefault();
     setError('');
     if (!form.username || !form.email || !form.password || !form.confirmPassword) {
-      setError('Please fill in all fields.');
+      setError(t('register.fillAll'));
       return;
     }
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('register.passwordMismatch'));
       return;
     }
     if (form.password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setError(t('register.passwordTooShort'));
       return;
     }
     setLoading(true);
@@ -50,7 +51,7 @@ export default function Register() {
       login(res.data.access_token, res.data.user);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed. Please try again.');
+      setError(err.response?.data?.error || t('register.failed'));
     } finally {
       setLoading(false);
     }
@@ -59,14 +60,14 @@ export default function Register() {
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
       <Typography component="h1" variant="h5" gutterBottom>
-        Create Account
+        {t('register.title')}
       </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <TextField
         margin="normal"
         required
         fullWidth
-        label="Username"
+        label={t('register.username')}
         name="username"
         autoFocus
         value={form.username}
@@ -76,7 +77,7 @@ export default function Register() {
         margin="normal"
         required
         fullWidth
-        label="Email Address"
+        label={t('register.email')}
         name="email"
         type="email"
         autoComplete="email"
@@ -87,7 +88,7 @@ export default function Register() {
         margin="normal"
         required
         fullWidth
-        label="Password"
+        label={t('register.password')}
         name="password"
         type="password"
         value={form.password}
@@ -97,7 +98,7 @@ export default function Register() {
         margin="normal"
         required
         fullWidth
-        label="Confirm Password"
+        label={t('register.confirmPassword')}
         name="confirmPassword"
         type="password"
         value={form.confirmPassword}
@@ -111,10 +112,10 @@ export default function Register() {
         disabled={loading}
         startIcon={loading ? <CircularProgress size={20} /> : null}
       >
-        {loading ? 'Creating Account…' : 'Sign Up'}
+        {loading ? t('register.submitting') : t('register.submit')}
       </Button>
       <Link component={RouterLink} to="/login" variant="body2">
-        Already have an account? Sign In
+        {t('register.switchLink')}
       </Link>
     </Box>
   );

@@ -1,18 +1,25 @@
-import json
-import os
 import uuid
 from datetime import datetime
 
+from sqlalchemy import or_
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from models import db
 
-class User:
-    def __init__(self, id, username, email, password_hash, created_at=None):
-        self.id = id
-        self.username = username
-        self.email = email
-        self.password_hash = password_hash
-        self.created_at = created_at or datetime.utcnow().isoformat()
+
+class User(db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.String(36), primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="user")
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    datasets = db.relationship("Dataset", backref="owner", cascade="all, delete-orphan")
+    indices = db.relationship("SearchIndex", backref="owner", cascade="all, delete-orphan")
+    history_entries = db.relationship("SearchHistory", backref="user", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
@@ -20,66 +27,47 @@ class User:
             "username": self.username,
             "email": self.email,
             "password_hash": self.password_hash,
-            "created_at": self.created_at,
+            "role": self.role,
+            "created_at": self.created_at.isoformat(),
+        }
+
+    def to_public_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "role": self.role,
         }
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
     @classmethod
-    def from_dict(cls, data):
+    def create(cls, username, email, password, role="user"):
         return cls(
-            id=data["id"],
-            username=data["username"],
-            email=data["email"],
-            password_hash=data["password_hash"],
-            created_at=data.get("created_at"),
+            id=str(uuid.uuid4()),
+            username=username,
+            email=email,
+            password_hash=generate_password_hash(password),
+            role=role,
         )
 
 
-class UserStore:
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self._ensure_file()
+def ensure_admin_user(config):
+    if not all([config.ADMIN_USERNAME, config.ADMIN_EMAIL, config.ADMIN_PASSWORD]):
+        return
 
-    def _ensure_file(self):
-        if not os.path.exists(self.db_path):
-            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-            self._write([])
+    existing_admin = User.query.filter(
+        or_(User.role == "admin", User.username == config.ADMIN_USERNAME, User.email == config.ADMIN_EMAIL)
+    ).first()
+    if existing_admin:
+        return
 
-    def _read(self):
-        try:
-            with open(self.db_path, "r") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            return []
-
-    def _write(self, users):
-        with open(self.db_path, "w") as f:
-            json.dump(users, f, indent=2)
-
-    def create_user(self, username, email, password):
-        users = self._read()
-        user_id = str(uuid.uuid4())
-        password_hash = generate_password_hash(password)
-        user = User(id=user_id, username=username, email=email, password_hash=password_hash)
-        users.append(user.to_dict())
-        self._write(users)
-        return user
-
-    def get_user_by_username(self, username):
-        users = self._read()
-        for u in users:
-            if u["username"] == username:
-                return User.from_dict(u)
-        return None
-
-    def get_user_by_id(self, user_id):
-        users = self._read()
-        for u in users:
-            if u["id"] == user_id:
-                return User.from_dict(u)
-        return None
-
-    def username_exists(self, username):
-        return self.get_user_by_username(username) is not None
+    admin = User.create(
+        username=config.ADMIN_USERNAME,
+        email=config.ADMIN_EMAIL,
+        password=config.ADMIN_PASSWORD,
+        role="admin",
+    )
+    db.session.add(admin)
+    db.session.commit()

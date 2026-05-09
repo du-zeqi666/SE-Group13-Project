@@ -22,13 +22,16 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useI18n } from '../App';
 
 export default function ResultsDisplay({ results }) {
+  const { t } = useI18n();
+
   if (!results) {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 300 }}>
         <Typography color="text.secondary">
-          Run a search to see results here.
+          {t('search.runSearchPrompt')}
         </Typography>
       </Box>
     );
@@ -37,7 +40,7 @@ export default function ResultsDisplay({ results }) {
   const { results: rows, query_time_ms, k, metric, query_cell } = results;
 
   const handleExport = () => {
-    const header = 'Rank,Cell ID,Cell Name,Distance\n';
+    const header = t('search.csvHeader');
     const csv =
       header +
       rows.map((r) => `${r.rank},${r.cell_id},${r.cell_name},${r.distance}`).join('\n');
@@ -45,7 +48,7 @@ export default function ResultsDisplay({ results }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ann_search_results.csv';
+    a.download = t('search.csvFileName');
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -58,14 +61,14 @@ export default function ResultsDisplay({ results }) {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">Results</Typography>
+        <Typography variant="h6">{t('search.results')}</Typography>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <Chip label={`k=${k}`} size="small" />
           <Chip label={metric?.toUpperCase()} size="small" color="primary" />
           <Chip label={`${query_time_ms} ms`} size="small" color="success" />
-          {query_cell && <Chip label={`Query: ${query_cell}`} size="small" color="info" />}
+          {query_cell && <Chip label={t('search.query', { cell: query_cell })} size="small" color="info" />}
           <Button size="small" startIcon={<DownloadIcon />} onClick={handleExport} variant="outlined">
-            Export CSV
+            {t('search.exportCsv')}
           </Button>
         </Box>
       </Box>
@@ -74,7 +77,7 @@ export default function ResultsDisplay({ results }) {
       {rows.length > 0 && (
         <Box sx={{ height: 200, mb: 3 }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            Distance Distribution (top {Math.min(20, rows.length)})
+            {t('search.distanceDistribution', { count: Math.min(20, rows.length) })}
           </Typography>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 40 }}>
@@ -92,17 +95,17 @@ export default function ResultsDisplay({ results }) {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Rank</TableCell>
-              <TableCell>Cell ID</TableCell>
-              <TableCell>Cell Name</TableCell>
-              <TableCell align="right">Distance</TableCell>
+              <TableCell>{t('search.rank')}</TableCell>
+              <TableCell>{t('search.cellIdHeader')}</TableCell>
+              <TableCell>{t('search.cellName')}</TableCell>
+              <TableCell align="right">{t('search.distance')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} align="center">
-                  No results found.
+                  {t('search.noResults')}
                 </TableCell>
               </TableRow>
             ) : (

@@ -5,6 +5,8 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
 from config import Config
+from models import db
+from models.user import ensure_admin_user
 from routes.auth import auth_bp
 from routes.data import data_bp
 from routes.index import index_bp
@@ -17,6 +19,7 @@ def create_app():
     app.config.from_object(Config)
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=Config.JWT_ACCESS_TOKEN_EXPIRES_HOURS)
 
+    db.init_app(app)
     CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}})
     JWTManager(app)
 
@@ -27,6 +30,10 @@ def create_app():
         Config.INDEX_FOLDER,
     ]:
         os.makedirs(path, exist_ok=True)
+
+    with app.app_context():
+        db.create_all()
+        ensure_admin_user(Config)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(data_bp)

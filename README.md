@@ -34,9 +34,9 @@ A full-stack web application for **Approximate Nearest Neighbor (ANN) search** o
 
 | Layer    | Technologies                                                                      |
 | -------- | --------------------------------------------------------------------------------- |
-| Backend  | Python 3.9+, Flask 2.3, Flask-JWT-Extended, FAISS-CPU, Annoy, NumPy, Pandas, h5py |
+| Backend  | Python 3.9+, Flask 2.3, Flask-JWT-Extended, Flask-SQLAlchemy, PyMySQL, FAISS-CPU, Annoy, NumPy, Pandas, h5py |
 | Frontend | React 18, React Router 6, Material UI 5, Recharts, Axios                          |
-| Storage  | JSON flat files + NumPy`.npy` arrays (no database required)                       |
+| Storage  | MySQL metadata + NumPy `.npy` arrays + ANN index files                            |
 
 ---
 
@@ -44,36 +44,122 @@ A full-stack web application for **Approximate Nearest Neighbor (ANN) search** o
 
 - Python **3.9+**
 - Node.js **16+** and npm
+- MySQL **8.0+** on port `3306`
 
 ---
 
-## Installation
+## Installation and Startup
+
+Run the backend and frontend in two separate terminals. The commands below are written for Windows PowerShell and use a repository-level `.venv` as the standard Python environment.
+
+### Database setup
+
+This project now stores metadata such as users, datasets, indices, and search history in MySQL. High-dimensional vectors and ANN index files remain on disk.
+
+1. Start MySQL and confirm it listens on port `3306`.
+2. Create the database:
+
+```sql
+CREATE DATABASE ann_search CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+3. Copy [backend/.env.example](backend/.env.example) to `backend/.env` and configure at least:
+
+```env
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=ann_search
+DB_USER=root
+DB_PASSWORD=your-mysql-password
+```
+
+4. If you want the first admin account to be created automatically on startup, also set:
+
+```env
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change-this-password
+```
+
+Note: backend startup creates metadata tables automatically, but it does not create the database itself. You must create `ann_search` in MySQL first.
 
 ### Backend
 
 ```bash
-cd backend
+cd .
 
-# 使用虚拟环境
-python3 -m venv venv
-venv\Scripts\activate    # Windows
-# source venv/bin/activate  # Linux/Mac
+# One-time setup
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r .\backend\requirements.txt
 
-pip install -r requirements.txt
-python app.py
+# Start backend
+python .\backend\app.py
 ```
 
 The API server starts at `http://localhost:5000`.
+
+If PowerShell blocks script activation, use the virtual environment interpreter directly:
+
+```bash
+.\.venv\Scripts\python.exe -m pip install -r .\backend\requirements.txt
+.\.venv\Scripts\python.exe .\backend\app.py
+```
 
 ### Frontend
 
 ```bash
 cd frontend
+
+# One-time setup
 npm install
+
+# Start frontend
 npm start
 ```
 
 The React dev server starts at `http://localhost:3000`.
+
+### Daily startup
+
+After the first setup, the standard startup flow is:
+
+Terminal 1:
+
+```bash
+cd .
+.\.venv\Scripts\Activate.ps1
+python .\backend\app.py
+```
+
+Terminal 2:
+
+```bash
+cd frontend
+npm start
+```
+
+### One-click scripts
+
+Project scripts are stored under the `scripts` folder in the repository root.
+
+Start everything:
+
+```bash
+powershell -ExecutionPolicy Bypass -File .\scripts\start_project.ps1
+```
+
+Stop everything:
+
+```bash
+powershell -ExecutionPolicy Bypass -File .\scripts\stop_project.ps1
+```
+
+Notes:
+
+1. `start_project.ps1` checks ports `3000` and `5000` to avoid duplicate startup.
+2. `stop_project.ps1` stops the frontend and backend processes that are listening on ports `3000` and `5000`.
+3. Run both scripts from the repository root, or call them with repository-root-relative paths.
 
 ---
 
@@ -109,10 +195,14 @@ All endpoints are prefixed with `/api`.
 ```
 .
 ├── backend/
-│   ├── app.py              # Flask application factory
+│   ├── app.py              # Flask application factory and startup entry
 │   ├── config.py           # Configuration constants
+│   ├── .env.example        # Database and admin config template
 │   ├── requirements.txt
-│   ├── models/user.py      # User model + JSON store
+│   ├── models/
+│   │   ├── __init__.py     # SQLAlchemy database instance
+│   │   ├── metadata.py     # Dataset, index, and search-history models
+│   │   └── user.py         # User model and admin bootstrap
 │   ├── routes/
 │   │   ├── auth.py         # /api/auth/*
 │   │   ├── data.py         # /api/data/*
@@ -121,7 +211,7 @@ All endpoints are prefixed with `/api`.
 │   ├── services/
 │   │   ├── ann_service.py  # FAISS / Annoy wrappers
 │   │   └── data_service.py # CSV / HDF5 loaders
-│   └── storage/            # Created at runtime
+│   └── storage/            # Runtime data directory for uploads and index files
 ├── frontend/
 │   ├── package.json
 │   ├── public/index.html
@@ -137,11 +227,19 @@ All endpoints are prefixed with `/api`.
 
 ## Environment Variables (optional)
 
-Create a `.env` file in `backend/`:
+Create `backend/.env` based on [backend/.env.example](backend/.env.example):
 
 ```
 SECRET_KEY=your-flask-secret
 JWT_SECRET_KEY=your-jwt-secret
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=ann_search
+DB_USER=root
+DB_PASSWORD=your-mysql-password
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change-this-password
 ```
 
 ---
@@ -149,6 +247,7 @@ JWT_SECRET_KEY=your-jwt-secret
 ## Running Tests
 
 ```bash
-cd backend
-pytest
+cd .
+.\.venv\Scripts\Activate.ps1
+python -m pytest .\backend
 ```

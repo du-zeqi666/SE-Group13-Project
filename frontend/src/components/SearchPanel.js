@@ -16,8 +16,10 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { searchByVector, searchById } from '../api/client';
+import { useI18n } from '../App';
 
 export default function SearchPanel({ indices, onResults }) {
+  const { t, language } = useI18n();
   const [indexId, setIndexId] = useState('');
   const [mode, setMode] = useState('vector');
   const [vectorText, setVectorText] = useState('');
@@ -30,7 +32,7 @@ export default function SearchPanel({ indices, onResults }) {
   const handleSearch = async () => {
     setError('');
     if (!indexId) {
-      setError('Please select an index.');
+      setError(t('search.selectIndex'));
       return;
     }
 
@@ -39,7 +41,7 @@ export default function SearchPanel({ indices, onResults }) {
       let res;
       if (mode === 'vector') {
         if (!vectorText.trim()) {
-          setError('Please enter a query vector.');
+          setError(t('search.enterVector'));
           setLoading(false);
           return;
         }
@@ -48,14 +50,14 @@ export default function SearchPanel({ indices, onResults }) {
           .map((s) => parseFloat(s.trim()))
           .filter((v) => !isNaN(v));
         if (queryVector.length === 0) {
-          setError('Invalid vector format. Enter comma-separated numbers.');
+          setError(t('search.invalidVector'));
           setLoading(false);
           return;
         }
         res = await searchByVector({ index_id: indexId, query_vector: queryVector, k, metric });
       } else {
         if (!cellId.trim()) {
-          setError('Please enter a cell ID.');
+          setError(t('search.enterCellId'));
           setLoading(false);
           return;
         }
@@ -63,7 +65,7 @@ export default function SearchPanel({ indices, onResults }) {
       }
       onResults(res.data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Search failed.');
+      setError(err.response?.data?.error || t('search.failed'));
     } finally {
       setLoading(false);
     }
@@ -73,16 +75,16 @@ export default function SearchPanel({ indices, onResults }) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h6">Search</Typography>
+      <Typography variant="h6">{t('search.title')}</Typography>
 
       {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
 
       <FormControl fullWidth size="small">
-        <InputLabel>Index</InputLabel>
-        <Select value={indexId} label="Index" onChange={(e) => setIndexId(e.target.value)}>
+        <InputLabel>{t('search.index')}</InputLabel>
+        <Select value={indexId} label={t('search.index')} onChange={(e) => setIndexId(e.target.value)}>
           {indices.length === 0 && (
             <MenuItem disabled value="">
-              No indices available
+              {t('search.noIndices')}
             </MenuItem>
           )}
           {indices.map((idx) => (
@@ -95,7 +97,10 @@ export default function SearchPanel({ indices, onResults }) {
 
       {selectedIndex && (
         <Typography variant="caption" color="text.secondary">
-          Features: {selectedIndex.n_features} | Built: {new Date(selectedIndex.created_at).toLocaleString()}
+          {t('search.featuresBuilt', {
+            features: selectedIndex.n_features,
+            date: new Date(selectedIndex.created_at).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US'),
+          })}
         </Typography>
       )}
 
@@ -106,29 +111,29 @@ export default function SearchPanel({ indices, onResults }) {
         size="small"
         fullWidth
       >
-        <ToggleButton value="vector">By Vector</ToggleButton>
-        <ToggleButton value="cell_id">By Cell ID</ToggleButton>
+        <ToggleButton value="vector">{t('search.byVector')}</ToggleButton>
+        <ToggleButton value="cell_id">{t('search.byCellId')}</ToggleButton>
       </ToggleButtonGroup>
 
       {mode === 'vector' ? (
         <TextField
-          label="Query Vector (comma-separated floats)"
+          label={t('search.queryVector')}
           multiline
           rows={3}
           fullWidth
           size="small"
           value={vectorText}
           onChange={(e) => setVectorText(e.target.value)}
-          placeholder="0.1, 0.5, -0.3, ..."
+          placeholder={t('search.vectorPlaceholder')}
         />
       ) : (
         <TextField
-          label="Cell ID or Name"
+          label={t('search.cellId')}
           fullWidth
           size="small"
           value={cellId}
           onChange={(e) => setCellId(e.target.value)}
-          placeholder="e.g. cell_42 or 42"
+          placeholder={t('search.cellIdPlaceholder')}
         />
       )}
 
@@ -152,8 +157,8 @@ export default function SearchPanel({ indices, onResults }) {
       </Box>
 
       <FormControl fullWidth size="small">
-        <InputLabel>Distance Metric</InputLabel>
-        <Select value={metric} label="Distance Metric" onChange={(e) => setMetric(e.target.value)}>
+        <InputLabel>{t('search.distanceMetric')}</InputLabel>
+        <Select value={metric} label={t('search.distanceMetric')} onChange={(e) => setMetric(e.target.value)}>
           <MenuItem value="l2">L2 (Euclidean)</MenuItem>
           <MenuItem value="cosine">Cosine</MenuItem>
           <MenuItem value="ip">Inner Product</MenuItem>
@@ -167,7 +172,7 @@ export default function SearchPanel({ indices, onResults }) {
         disabled={loading}
         fullWidth
       >
-        {loading ? 'Searching…' : 'Search'}
+        {loading ? t('search.searching') : t('search.search')}
       </Button>
     </Box>
   );

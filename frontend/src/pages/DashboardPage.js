@@ -34,10 +34,11 @@ import HistoryIcon from '@mui/icons-material/History';
 import Navbar from '../components/Navbar';
 import DataManagement from '../components/DataManagement';
 import { listDatasets, listIndices, buildIndex, deleteIndex, getHistory } from '../api/client';
-import { useAuth } from '../App';
+import { useAuth, useI18n } from '../App';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [datasets, setDatasets] = useState([]);
   const [indices, setIndices] = useState([]);
   const [history, setHistory] = useState([]);
@@ -72,16 +73,16 @@ export default function DashboardPage() {
     setBuildError('');
     setBuildSuccess('');
     if (!buildForm.dataset_id) {
-      setBuildError('Please select a dataset.');
+      setBuildError(t('dashboard.selectDataset'));
       return;
     }
     setBuildLoading(true);
     try {
       await buildIndex(buildForm);
-      setBuildSuccess('Index built successfully!');
+      setBuildSuccess(t('dashboard.buildSuccess'));
       fetchAll();
     } catch (err) {
-      setBuildError(err.response?.data?.error || 'Failed to build index');
+      setBuildError(err.response?.data?.error || t('dashboard.buildFailed'));
     } finally {
       setBuildLoading(false);
     }
@@ -101,7 +102,7 @@ export default function DashboardPage() {
       <Navbar />
       <Container maxWidth="xl" sx={{ py: 3 }}>
         <Typography variant="h4" gutterBottom>
-          Welcome, {user?.username}
+          {t('dashboard.welcome', { username: user?.username || '' })}
         </Typography>
 
         {/* Stats cards */}
@@ -112,7 +113,7 @@ export default function DashboardPage() {
                 <StorageIcon color="primary" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h4">{datasets.length}</Typography>
-                  <Typography color="text.secondary">Datasets</Typography>
+                  <Typography color="text.secondary">{t('dashboard.datasets')}</Typography>
                 </Box>
               </CardContent>
             </Card>
@@ -123,7 +124,7 @@ export default function DashboardPage() {
                 <AccountTreeIcon color="secondary" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h4">{indices.length}</Typography>
-                  <Typography color="text.secondary">Indices</Typography>
+                  <Typography color="text.secondary">{t('dashboard.indices')}</Typography>
                 </Box>
               </CardContent>
             </Card>
@@ -134,7 +135,7 @@ export default function DashboardPage() {
                 <HistoryIcon color="action" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h4">{history.length}</Typography>
-                  <Typography color="text.secondary">Recent Searches</Typography>
+                  <Typography color="text.secondary">{t('dashboard.recentSearches')}</Typography>
                 </Box>
               </CardContent>
             </Card>
@@ -146,7 +147,7 @@ export default function DashboardPage() {
           <Grid item xs={12}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Data Management
+                {t('dashboard.dataManagement')}
               </Typography>
               <DataManagement datasets={datasets} onRefresh={fetchAll} />
             </Paper>
@@ -156,17 +157,17 @@ export default function DashboardPage() {
           <Grid item xs={12} md={5}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Build ANN Index
+                {t('dashboard.buildIndex')}
               </Typography>
               {buildError && <Alert severity="error" sx={{ mb: 2 }}>{buildError}</Alert>}
               {buildSuccess && <Alert severity="success" sx={{ mb: 2 }}>{buildSuccess}</Alert>}
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <FormControl fullWidth size="small">
-                  <InputLabel>Dataset</InputLabel>
+                  <InputLabel>{t('dashboard.dataset')}</InputLabel>
                   <Select
                     value={buildForm.dataset_id}
-                    label="Dataset"
+                    label={t('dashboard.dataset')}
                     onChange={(e) => setBuildForm({ ...buildForm, dataset_id: e.target.value })}
                   >
                     {datasets.map((ds) => (
@@ -179,7 +180,7 @@ export default function DashboardPage() {
 
                 <Box>
                   <Typography variant="body2" gutterBottom>
-                    Index Type
+                    {t('dashboard.indexType')}
                   </Typography>
                   <ToggleButtonGroup
                     value={buildForm.index_type}
@@ -195,10 +196,10 @@ export default function DashboardPage() {
                 </Box>
 
                 <FormControl fullWidth size="small">
-                  <InputLabel>Metric</InputLabel>
+                  <InputLabel>{t('dashboard.metric')}</InputLabel>
                   <Select
                     value={buildForm.metric}
-                    label="Metric"
+                    label={t('dashboard.metric')}
                     onChange={(e) => setBuildForm({ ...buildForm, metric: e.target.value })}
                   >
                     <MenuItem value="l2">L2 (Euclidean)</MenuItem>
@@ -214,7 +215,7 @@ export default function DashboardPage() {
                   disabled={buildLoading}
                   fullWidth
                 >
-                  {buildLoading ? 'Building…' : 'Build Index'}
+                  {buildLoading ? t('dashboard.building') : t('dashboard.build')}
                 </Button>
               </Box>
             </Paper>
@@ -224,25 +225,25 @@ export default function DashboardPage() {
           <Grid item xs={12} md={7}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Available Indices
+                {t('dashboard.availableIndices')}
               </Typography>
               <TableContainer>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Type</TableCell>
-                      <TableCell>Metric</TableCell>
-                      <TableCell align="right">Cells</TableCell>
-                      <TableCell align="right">Features</TableCell>
-                      <TableCell align="right">Build (s)</TableCell>
-                      <TableCell align="center">Actions</TableCell>
+                      <TableCell>{t('dashboard.type')}</TableCell>
+                      <TableCell>{t('dashboard.metric')}</TableCell>
+                      <TableCell align="right">{t('dashboard.cells')}</TableCell>
+                      <TableCell align="right">{t('dashboard.features')}</TableCell>
+                      <TableCell align="right">{t('dashboard.buildSeconds')}</TableCell>
+                      <TableCell align="center">{t('dashboard.actions')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {indices.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary' }}>
-                          No indices yet. Build one above.
+                          {t('dashboard.noIndices')}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -261,7 +262,7 @@ export default function DashboardPage() {
                           <TableCell align="right">{idx.n_features}</TableCell>
                           <TableCell align="right">{idx.build_time}</TableCell>
                           <TableCell align="center">
-                            <Tooltip title="Delete">
+                            <Tooltip title={t('dashboard.delete')}>
                               <IconButton
                                 size="small"
                                 color="error"
