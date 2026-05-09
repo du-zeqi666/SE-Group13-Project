@@ -11,6 +11,7 @@ from routes.auth import auth_bp
 from routes.data import data_bp
 from routes.index import index_bp
 from routes.search import search_bp
+from routes.users import users_bp
 import os
 
 
@@ -39,6 +40,7 @@ def create_app():
     app.register_blueprint(data_bp)
     app.register_blueprint(index_bp)
     app.register_blueprint(search_bp)
+    app.register_blueprint(users_bp)
 
     @app.route("/api/health")
     def health():

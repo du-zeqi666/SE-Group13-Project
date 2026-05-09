@@ -37,13 +37,21 @@ export default function Navbar() {
           <Button color="inherit" component={RouterLink} to="/search">
             {t('nav.search')}
           </Button>
+          <Button color="inherit" component={RouterLink} to="/profile">
+            {t('nav.profile')}
+          </Button>
+          {user?.role === 'admin' && (
+            <Button color="inherit" component={RouterLink} to="/admin/users">
+              {t('nav.adminUsers')}
+            </Button>
+          )}
         </Box>
         <Button color="inherit" onClick={toggleLanguage} sx={{ mr: 1 }}>
           {t('nav.switchLanguage')}
         </Button>
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2">{user.username}</Typography>
+            <Typography variant="body2">{user.username} ({t(user.role === 'admin' ? 'nav.roleAdmin' : 'nav.roleUser')})</Typography>
             <Tooltip title={t('nav.logout')}>
               <IconButton color="inherit" onClick={handleLogout} size="small">
                 <LogoutIcon />

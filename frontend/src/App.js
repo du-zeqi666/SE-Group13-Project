@@ -4,6 +4,8 @@ import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import SearchPage from './pages/SearchPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminUsersPage from './pages/AdminUsersPage';
 import { getMe } from './api/client';
 import { translate } from './i18n';
 
@@ -29,6 +31,13 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
   return user ? children : <Navigate to="/login" replace />;
+}
+
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  return user.role === 'admin' ? children : <Navigate to="/dashboard" replace />;
 }
 
 export default function App() {
@@ -64,6 +73,10 @@ export default function App() {
     setUser(null);
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+  };
+
   const toggleLanguage = () => {
     setLanguage((current) => (current === 'en' ? 'zh' : 'en'));
   };
@@ -72,7 +85,7 @@ export default function App() {
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>
-      <AuthContext.Provider value={{ user, loading, login, logout }}>
+      <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <Routes>
@@ -102,6 +115,22 @@ export default function App() {
                 <ProtectedRoute>
                   <SearchPage />
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <AdminRoute>
+                  <AdminUsersPage />
+                </AdminRoute>
               }
             />
           </Routes>

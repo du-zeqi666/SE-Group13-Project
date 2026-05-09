@@ -79,6 +79,8 @@ ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=change-this-password
 ```
 
+管理员账号的密码来源于 `backend/.env` 中的 `ADMIN_PASSWORD` 配置，不是项目内写死的固定默认密码。
+
 说明：后端启动时会自动创建元数据表，但不会自动创建数据库本身，因此 `ann_search` 需要你先在 MySQL 中创建。
 
 ### 后端
@@ -135,6 +137,29 @@ python .\backend\app.py
 ```bash
 cd frontend
 npm start
+```
+
+### PowerShell 脚本运行命令
+
+如果你希望直接通过脚本启动或关闭项目，请先在项目根目录打开 PowerShell，再执行以下命令。
+
+启动前后端：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_project.ps1
+```
+
+关闭前后端：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\stop_project.ps1
+```
+
+如果当前 PowerShell 已经位于项目根目录，也可以直接运行：
+
+```powershell
+.\scripts\start_project.ps1
+.\scripts\stop_project.ps1
 ```
 
 ### 一键启动与关闭脚本

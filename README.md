@@ -81,6 +81,8 @@ ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=change-this-password
 ```
 
+The administrator password comes from `ADMIN_PASSWORD` in `backend/.env`; it is not a hard-coded built-in default password.
+
 Note: backend startup creates metadata tables automatically, but it does not create the database itself. You must create `ann_search` in MySQL first.
 
 ### Backend
@@ -137,6 +139,29 @@ Terminal 2:
 ```bash
 cd frontend
 npm start
+```
+
+### PowerShell script commands
+
+If you want to start or stop the project through scripts, open PowerShell in the repository root first, then run the commands below.
+
+Start frontend and backend:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_project.ps1
+```
+
+Stop frontend and backend:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\stop_project.ps1
+```
+
+If your current PowerShell session is already at the repository root, you can also run:
+
+```powershell
+.\scripts\start_project.ps1
+.\scripts\stop_project.ps1
 ```
 
 ### One-click scripts

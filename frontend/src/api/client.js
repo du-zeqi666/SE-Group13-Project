@@ -20,6 +20,13 @@ export const register = (username, email, password) =>
   client.post('/api/auth/register', { username, email, password });
 
 export const getMe = () => client.get('/api/auth/me');
+export const updateMyProfile = (payload) => client.patch('/api/users/me', payload);
+export const updateMyPassword = (payload) => client.patch('/api/users/me/password', payload);
+export const listUsers = () => client.get('/api/users');
+export const createUser = (payload) => client.post('/api/users', payload);
+export const updateUser = (id, payload) => client.patch(`/api/users/${id}`, payload);
+export const updateUserPassword = (id, payload) => client.patch(`/api/users/${id}/password`, payload);
+export const deleteUser = (id) => client.delete(`/api/users/${id}`);
 
 // Data
 export const uploadDataset = (formData, onProgress) =>
