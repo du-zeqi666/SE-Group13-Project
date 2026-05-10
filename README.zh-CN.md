@@ -1,40 +1,41 @@
 # SE-Group13-Project
 
-本项目为南开大学 2025-2026 春季学年刘健老师课程班级第 13 小组大作业。
+本项目为南开大学 2025-2026 春季学年软件工程课程第 13 组大作业。
+
+English version: [README.md](README.md)
 
 ---
 
-# ANN Search - 单细胞数据分析
+## ANN Search - 单细胞数据分析
 
-这是一个面向高维单细胞基因组数据的全栈 Web 应用，用于进行近似最近邻（ANN）检索。用户可以上传 scRNA-seq 数据集，构建基于 FAISS 或 Annoy 的高效索引，并以毫秒级速度进行交互式近邻查询。
-
----
-
-## 功能特性
-
-- 用户认证：基于 JWT 的注册与登录
-- 数据集管理：支持上传 CSV、TSV、HDF5（10x Genomics）或 H5AD 文件，单文件最大 100 MB
-| 后端 | Python 3.9+、Flask 2.3、Flask-JWT-Extended、Flask-SQLAlchemy、PyMySQL、FAISS-CPU、Annoy、NumPy、Pandas、h5py |
-- 数据预处理：支持 L2 归一化或按特征标准化
-| 存储 | MySQL 元数据 + NumPy .npy 数组 + ANN 索引文件 |
-  - FAISS Flat（精确检索，支持 L2 或内积）
-  - FAISS IVF（近似检索，适合大规模数据）
-  - Annoy（基于树结构，内存占用较低）
-- MySQL 8.0+（默认端口 3306）
-  - 支持按细胞 ID 或名称查询
-  - 支持配置 k 值与距离度量方式（L2、余弦、内积）
-- 丰富的结果展示：包含排序结果表、距离柱状图与 CSV 导出
-- 搜索历史：为每位用户保留最近 10 次查询记录
+这是一个面向高维单细胞数据的全栈 Web 应用，支持数据集上传、预处理、近似最近邻索引构建、交互式检索、个人账户管理，以及管理员侧的用户管理。
 
 ---
 
-## 技术栈
+## 主要功能
+
+- 基于 JWT 的注册、登录和当前用户鉴权
+- 个人信息管理，支持修改用户名、邮箱和密码
+- 管理员可创建、编辑、重置密码和删除普通用户
+- 支持 CSV、TSV、HDF5、H5AD 数据集上传，并可一键生成演示数据
+- 支持 L2 归一化和按特征标准化的数据预处理
+- 支持构建 FAISS Flat、FAISS IVF 和 Annoy 索引
+- 支持按原始向量或按细胞 ID 检索，并可配置 k 值和距离度量
+- 支持结果排序展示、图表展示、CSV 导出和最近搜索历史
+- 前端支持中英文界面切换
+
+---
+
+## 架构说明
 
 | 层级 | 技术 |
-| ---- | ---- |
-| 后端 | Python 3.9+、Flask 2.3、Flask-JWT-Extended、Flask-SQLAlchemy、PyMySQL、FAISS-CPU、Annoy、NumPy、Pandas、h5py |
-| 前端 | React 18、React Router 6、Material UI 5、Recharts、Axios |
-| 存储 | MySQL 元数据 + NumPy .npy 数组 + ANN 索引文件 |
+| --- | --- |
+| 后端 | Python 3.9+、Flask 2.3、Flask-CORS、Flask-JWT-Extended、Flask-SQLAlchemy、PyMySQL |
+| ANN / 数据处理 | FAISS-CPU、Annoy、NumPy、Pandas、h5py、scikit-learn |
+| 前端 | React 18、React Router 6、Material UI 5、Axios、Recharts |
+| 存储 | MySQL 元数据 + 本地数据文件 + 本地 ANN 索引文件 |
+
+用户、数据集、索引和搜索历史等元数据存储在 MySQL 中；高维数组和 ANN 索引文件保存在 `backend/storage` 目录下。
 
 ---
 
@@ -42,26 +43,28 @@
 
 - Python 3.9+
 - Node.js 16+ 和 npm
-- MySQL 8.0+（默认端口 3306）
+- MySQL 8.0+，端口 3306
+- Windows PowerShell，用于执行下方命令
 
 ---
 
-## 安装与启动
+## 快速开始
 
-后端和前端请分别在两个终端中运行。下面的命令按 Windows PowerShell 编写，并统一使用仓库根目录下的 `.venv` 作为标准 Python 虚拟环境。
-
-### 数据库初始化
-
-项目现在使用 MySQL 存储用户、数据集、索引和搜索历史等元数据。高维向量本体和 ANN 索引文件仍保存在磁盘中。
-
-1. 启动 MySQL，并确认监听端口为 3306。
-2. 创建数据库：
+### 1. 创建 MySQL 数据库
 
 ```sql
 CREATE DATABASE ann_search CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-3. 基于 [backend/.env.example](backend/.env.example) 创建 `backend/.env`，至少填写：
+### 2. 创建 `backend/.env`
+
+先复制后端环境变量模板：
+
+```powershell
+Copy-Item .\backend\.env.example .\backend\.env
+```
+
+至少填写：
 
 ```env
 DB_HOST=127.0.0.1
@@ -71,7 +74,7 @@ DB_USER=root
 DB_PASSWORD=your-mysql-password
 ```
 
-4. 如果需要首次自动创建管理员账号，可以继续填写：
+如果希望首次启动时自动创建管理员账号，还需要填写：
 
 ```env
 ADMIN_USERNAME=admin
@@ -79,145 +82,127 @@ ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=change-this-password
 ```
 
-管理员账号的密码来源于 `backend/.env` 中的 `ADMIN_PASSWORD` 配置，不是项目内写死的固定默认密码。
+每个字段的详细说明见 [backend/.env.example](backend/.env.example)。如果管理员相关字段留空，系统不会自动创建管理员账号。
 
-说明：后端启动时会自动创建元数据表，但不会自动创建数据库本身，因此 `ann_search` 需要你先在 MySQL 中创建。
+### 3. 可选：创建 `frontend/.env.local`
 
-### 后端
+前端默认请求 `http://localhost:5000`。只有当后端地址不是这个默认值时，才需要创建该文件：
 
-```bash
-cd .
+```powershell
+Copy-Item .\frontend\.env.local.example .\frontend\.env.local
+```
 
-# 首次初始化
+然后修改：
+
+```env
+REACT_APP_API_URL=http://localhost:5000
+```
+
+### 4. 初始化并启动后端
+
+```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r .\backend\requirements.txt
-
-# 启动后端
 python .\backend\app.py
 ```
 
-API 服务默认启动在 http://localhost:5000。
-
 如果 PowerShell 因执行策略无法激活脚本，可以直接使用虚拟环境解释器：
 
-```bash
+```powershell
 .\.venv\Scripts\python.exe -m pip install -r .\backend\requirements.txt
 .\.venv\Scripts\python.exe .\backend\app.py
 ```
 
-### 前端
+后端地址：`http://localhost:5000`
 
-```bash
+### 5. 初始化并启动前端
+
+```powershell
 cd frontend
-
-# 首次初始化
 npm install
-
-# 启动前端
 npm start
 ```
 
-React 开发服务器默认启动在 http://localhost:3000。
+前端地址：`http://localhost:3000`
 
-### 日常启动流程
+### 6. 可选：使用一键脚本
 
-完成首次初始化后，后续标准启动命令如下。
+在项目根目录执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_project.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\stop_project.ps1
+```
+
+---
+
+## 本地文件与自动生成目录
+
+| 路径 | 本地是否需要 | 生成方式 |
+| --- | --- | --- |
+| `backend/.env` | 需要 | 复制 [backend/.env.example](backend/.env.example) 后填写本机配置 |
+| `frontend/.env.local` | 按需 | 仅在需要修改前端 API 地址时，复制 [frontend/.env.local.example](frontend/.env.local.example) |
+| `.venv/` | 需要 | 执行 `python -m venv .venv` |
+| `node_modules/` | 需要 | 在 `frontend` 目录执行 `npm install` |
+| `build/` | 按需 | 在 `frontend` 目录执行 `npm run build` |
+| `backend/storage/` | 运行时生成 | 由上传、预处理、建索引等操作自动生成 |
+| `__pycache__/`、`*.pyc`、`*.pyo`、`*.pyd` | 不需要手工处理 | 由 Python 自动生成 |
+
+---
+
+## 日常启动命令
+
+手动启动：
 
 终端 1：
 
-```bash
-cd .
+```powershell
 .\.venv\Scripts\Activate.ps1
 python .\backend\app.py
 ```
 
 终端 2：
 
-```bash
+```powershell
 cd frontend
 npm start
 ```
 
-### PowerShell 脚本运行命令
-
-如果你希望直接通过脚本启动或关闭项目，请先在项目根目录打开 PowerShell，再执行以下命令。
-
-启动前后端：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\start_project.ps1
-```
-
-关闭前后端：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\stop_project.ps1
-```
-
-如果当前 PowerShell 已经位于项目根目录，也可以直接运行：
+脚本启动：
 
 ```powershell
 .\scripts\start_project.ps1
 .\scripts\stop_project.ps1
 ```
 
-### 一键启动与关闭脚本
-
-项目根目录下的脚本已统一存放在 scripts 文件夹中。
-
-一键启动：
-
-```bash
-powershell -ExecutionPolicy Bypass -File .\scripts\start_project.ps1
-```
-
-一键关闭：
-
-```bash
-powershell -ExecutionPolicy Bypass -File .\scripts\stop_project.ps1
-```
-
-说明：
-
-1. start_project.ps1 会检查 3000 和 5000 端口，避免重复启动。
-2. stop_project.ps1 会关闭占用 3000 和 5000 端口的前后端进程。
-3. 两个脚本都需要在项目根目录执行，或使用项目根目录下的相对路径调用。
+启动脚本会检查 3000 和 5000 端口，避免重复启动；关闭脚本会结束占用这两个端口的前后端进程。
 
 ---
 
-## 使用方法
+## 使用流程
 
-1. 打开 http://localhost:3000 并注册新账户。
-2. 进入 Dashboard -> Data Management，然后选择以下任一方式：
-   - 上传 CSV、TSV 或 H5 文件；
-   - 点击 Generate Demo Data 立即生成测试数据。
-3. 可选：对数据集进行预处理（L2 归一化或标准化）。
-4. 在 Build ANN Index 区域中，选择数据集、索引类型和距离度量方式，然后点击 Build Index。
-5. 进入 Search 页面，选择索引，输入查询向量或细胞 ID，设置 k 值后执行搜索。
-6. 在结果表和距离柱状图中查看排序结果，并在需要时导出为 CSV。
+1. 打开 `http://localhost:3000`。
+2. 注册普通用户，或使用 `backend/.env` 中配置的管理员账号登录。
+3. 进入 Dashboard 上传数据集，或者直接生成演示数据。
+4. 根据需要对数据集做预处理。
+5. 为数据集构建 FAISS 或 Annoy 索引。
+6. 在 Search 页面中按向量或按细胞 ID 发起检索。
+7. 查看排序结果、图表、CSV 导出和最近搜索历史。
+8. 在 Profile 页面维护自己的账户信息。
+9. 如果是管理员，可在 User Management 页面管理普通用户。
 
 ---
 
 ## API 概览
 
-所有接口均以 /api 为前缀。
+所有接口均以 `/api` 为前缀。
 
-### 认证
-
-POST /api/auth/register · POST /api/auth/login · GET /api/auth/me
-
-### 数据
-
-POST /api/data/upload · POST /api/data/generate_demo · GET /api/data/datasets · DELETE /api/data/datasets/<id> · POST /api/data/datasets/<id>/preprocess
-
-### 索引
-
-POST /api/index/build · GET /api/index/list · GET /api/index/<id> · DELETE /api/index/<id>
-
-### 搜索
-
-POST /api/search/query · POST /api/search/query_by_id · GET /api/search/history
+- 认证：`POST /api/auth/register`、`POST /api/auth/login`、`GET /api/auth/me`
+- 用户：`PATCH /api/users/me`、`PATCH /api/users/me/password`、`GET /api/users`、`POST /api/users`、`PATCH /api/users/<id>`、`PATCH /api/users/<id>/password`、`DELETE /api/users/<id>`
+- 数据：`POST /api/data/upload`、`POST /api/data/generate_demo`、`GET /api/data/datasets`、`DELETE /api/data/datasets/<id>`、`POST /api/data/datasets/<id>/preprocess`
+- 索引：`POST /api/index/build`、`GET /api/index/list`、`GET /api/index/<id>`、`DELETE /api/index/<id>`
+- 搜索：`POST /api/search/query`、`POST /api/search/query_by_id`、`GET /api/search/history`
 
 ---
 
@@ -226,59 +211,58 @@ POST /api/search/query · POST /api/search/query_by_id · GET /api/search/histor
 ```text
 .
 ├── backend/
-│   ├── app.py              # Flask 应用工厂与启动入口
-│   ├── config.py           # 配置常量
-│   ├── .env.example        # 数据库与管理员配置模板
-│   ├── requirements.txt
+│   ├── app.py
+│   ├── config.py
+│   ├── .env.example
 │   ├── models/
-│   │   ├── __init__.py     # SQLAlchemy 数据库实例
-│   │   ├── metadata.py     # 数据集、索引、搜索历史模型
-│   │   └── user.py         # 用户模型与管理员初始化
+│   │   ├── __init__.py
+│   │   ├── metadata.py
+│   │   └── user.py
 │   ├── routes/
-│   │   ├── auth.py         # /api/auth/*
-│   │   ├── data.py         # /api/data/*
-│   │   ├── index.py        # /api/index/*
-│   │   └── search.py       # /api/search/*
+│   │   ├── auth.py
+│   │   ├── data.py
+│   │   ├── index.py
+│   │   ├── search.py
+│   │   └── users.py
 │   ├── services/
-│   │   ├── ann_service.py  # FAISS / Annoy 封装
-│   │   └── data_service.py # CSV / HDF5 读取与处理
-│   └── storage/            # 运行时数据目录（上传文件与索引文件）
+│   │   ├── ann_service.py
+│   │   └── data_service.py
+│   └── storage/
 ├── frontend/
+│   ├── .env.local.example
 │   ├── package.json
-│   ├── public/index.html
+│   ├── public/
 │   └── src/
-│       ├── App.js          # 路由与认证上下文
-│       ├── api/client.js   # Axios API 客户端
-│       ├── components/     # 可复用组件
-│       └── pages/          # 页面级视图
-└── README.md
+│       ├── App.js
+│       ├── api/client.js
+│       ├── components/
+│       ├── i18n.js
+│       └── pages/
+│           ├── AdminUsersPage.js
+│           ├── AuthPage.js
+│           ├── DashboardPage.js
+│           ├── ProfilePage.js
+│           └── SearchPage.js
+├── scripts/
+│   ├── start_project.ps1
+│   └── stop_project.ps1
+├── README.md
+└── README.zh-CN.md
 ```
 
 ---
 
-## 环境变量（可选）
+## 校验命令
 
-在 [backend/.env.example](backend/.env.example) 基础上创建 `backend/.env` 文件：
+后端语法检查：
 
-```env
-SECRET_KEY=your-flask-secret
-JWT_SECRET_KEY=your-jwt-secret
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=ann_search
-DB_USER=root
-DB_PASSWORD=your-mysql-password
-ADMIN_USERNAME=admin
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=change-this-password
+```powershell
+.\.venv\Scripts\python.exe -m compileall .\backend
 ```
 
----
+前端生产构建：
 
-## 运行测试
-
-```bash
-cd .
-.\.venv\Scripts\Activate.ps1
-python -m pytest .\backend
+```powershell
+cd frontend
+npm run build
 ```
