@@ -143,11 +143,37 @@ powershell -ExecutionPolicy Bypass -File .\scripts\stop_project.ps1
 | --- | --- | --- |
 | `backend/.env` | 需要 | 复制 [backend/.env.example](backend/.env.example) 后填写本机配置 |
 | `frontend/.env.local` | 按需 | 仅在需要修改前端 API 地址时，复制 [frontend/.env.local.example](frontend/.env.local.example) |
+| `data/` | 可选但建议保留 | 用于存放课程原始数据等大文件；保留说明文档，不提交原始 `.h5ad` |
 | `.venv/` | 需要 | 执行 `python -m venv .venv` |
 | `node_modules/` | 需要 | 在 `frontend` 目录执行 `npm install` |
 | `build/` | 按需 | 在 `frontend` 目录执行 `npm run build` |
 | `backend/storage/` | 运行时生成 | 由上传、预处理、建索引等操作自动生成 |
 | `__pycache__/`、`*.pyc`、`*.pyo`、`*.pyd` | 不需要手工处理 | 由 Python 自动生成 |
+
+### 课程数据存放路径
+
+如果你在本地使用课程提供的肝脏单细胞数据，建议统一放在 `data/` 目录，例如：
+
+```text
+data/
+├── liver.h5ad
+└── 数据说明.md
+```
+
+其中大型原始数据文件会被 `.gitignore` 忽略，不应提交到仓库；建议只保留 [data/数据说明.md](data/数据说明.md) 这类轻量说明文件。
+
+### 针对课程 `.h5ad` 数据的推荐处理方式
+
+对当前提供的 `liver.h5ad`，更符合课程要求的 ANN 输入不是原始表达矩阵，而是文件里已经准备好的 `obsm["X_pca"]` PCA 表示。
+
+在本项目中的推荐映射方式如下：
+
+1. 使用 `obsm["X_pca"]` 作为构建 ANN 索引的细胞向量矩阵。
+2. 使用 `obs` 中的 `cell_type`、`disease`、`AgeGroup` 等字段作为返回细胞信息和后续条件检索字段。
+3. 使用 `obsm["X_umap"]` 或 `obsm["X_tsne"]` 做可视化，不建议直接作为主检索向量。
+4. 原始 `X` 表达矩阵保留为源数据，需要时再使用，但不建议默认直接用于检索，因为维度更高、开销更大。
+
+说明：当前后端上传链路已经支持通用 CSV/TSV/HDF5 输入，但这份课程 `.h5ad` 数据是结构化的 AnnData 文件，且包含现成降维结果。若要完全贴合课程数据设计，后端加载逻辑应优先读取 `obsm["X_pca"]` 和选定的 `obs` 元数据字段。
 
 ---
 

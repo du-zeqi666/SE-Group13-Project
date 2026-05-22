@@ -9,6 +9,12 @@ __pycache__/
 # Storage (runtime data)
 backend/storage/
 
+# Local datasets (keep docs, ignore large raw data files)
+data/*.h5ad
+data/*.h5
+data/*.loom
+data/*.mtx
+
 # Node
 node_modules/
 build/
