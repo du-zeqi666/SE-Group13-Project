@@ -26,8 +26,18 @@ export default function SearchPanel({ indices, onResults }) {
   const [cellId, setCellId] = useState('');
   const [k, setK] = useState(10);
   const [metric, setMetric] = useState('l2');
+  const [filters, setFilters] = useState({
+    cell_type: '',
+    disease: '',
+    AgeGroup: '',
+    donor_id: '',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const activeFilters = Object.fromEntries(
+    Object.entries(filters).filter(([, value]) => value.trim())
+  );
 
   const handleSearch = async () => {
     setError('');
@@ -54,14 +64,14 @@ export default function SearchPanel({ indices, onResults }) {
           setLoading(false);
           return;
         }
-        res = await searchByVector({ index_id: indexId, query_vector: queryVector, k, metric });
+        res = await searchByVector({ index_id: indexId, query_vector: queryVector, k, metric, filters: activeFilters });
       } else {
         if (!cellId.trim()) {
           setError(t('search.enterCellId'));
           setLoading(false);
           return;
         }
-        res = await searchById({ index_id: indexId, cell_id: cellId.trim(), k });
+        res = await searchById({ index_id: indexId, cell_id: cellId.trim(), k, filters: activeFilters });
       }
       onResults(res.data);
     } catch (err) {
@@ -164,6 +174,36 @@ export default function SearchPanel({ indices, onResults }) {
           <MenuItem value="ip">Inner Product</MenuItem>
         </Select>
       </FormControl>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
+        <Typography variant="subtitle2" sx={{ gridColumn: '1 / -1' }}>
+          {t('search.conditionFilters')}
+        </Typography>
+        <TextField
+          label={t('search.cellType')}
+          size="small"
+          value={filters.cell_type}
+          onChange={(e) => setFilters((prev) => ({ ...prev, cell_type: e.target.value }))}
+        />
+        <TextField
+          label={t('search.disease')}
+          size="small"
+          value={filters.disease}
+          onChange={(e) => setFilters((prev) => ({ ...prev, disease: e.target.value }))}
+        />
+        <TextField
+          label={t('search.ageGroup')}
+          size="small"
+          value={filters.AgeGroup}
+          onChange={(e) => setFilters((prev) => ({ ...prev, AgeGroup: e.target.value }))}
+        />
+        <TextField
+          label={t('search.donorId')}
+          size="small"
+          value={filters.donor_id}
+          onChange={(e) => setFilters((prev) => ({ ...prev, donor_id: e.target.value }))}
+        />
+      </Box>
 
       <Button
         variant="contained"

@@ -11,6 +11,7 @@ import {
   Paper,
   Button,
   Chip,
+  Stack,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import {
@@ -38,12 +39,33 @@ export default function ResultsDisplay({ results }) {
   }
 
   const { results: rows, query_time_ms, k, metric, query_cell } = results;
+  const activeFilters = results.filters || {};
+  const metadataColumns = [
+    { key: 'cell_type', label: t('search.cellType') },
+    { key: 'disease', label: t('search.disease') },
+    { key: 'AgeGroup', label: t('search.ageGroup') },
+    { key: 'donor_id', label: t('search.donorId') },
+  ].filter(({ key }) => rows.some((row) => row[key]));
 
   const handleExport = () => {
-    const header = t('search.csvHeader');
+    const header = [
+      t('search.rank'),
+      t('search.cellIdHeader'),
+      t('search.cellName'),
+      ...metadataColumns.map((column) => column.label),
+      t('search.distance'),
+    ].join(',') + '\n';
     const csv =
       header +
-      rows.map((r) => `${r.rank},${r.cell_id},${r.cell_name},${r.distance}`).join('\n');
+      rows
+        .map((row) => [
+          row.rank,
+          row.cell_id,
+          row.cell_name,
+          ...metadataColumns.map((column) => row[column.key] || ''),
+          row.distance,
+        ].join(','))
+        .join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -73,6 +95,22 @@ export default function ResultsDisplay({ results }) {
         </Box>
       </Box>
 
+      {Object.keys(activeFilters).length > 0 && (
+        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            {t('search.activeFilters')}
+          </Typography>
+          {Object.entries(activeFilters).map(([key, value]) => (
+            <Chip
+              key={key}
+              label={`${t(`search.${key === 'cell_type' ? 'cellType' : key === 'donor_id' ? 'donorId' : key}`)}: ${value}`}
+              size="small"
+              variant="outlined"
+            />
+          ))}
+        </Stack>
+      )}
+
       {/* Distance bar chart */}
       {rows.length > 0 && (
         <Box sx={{ height: 200, mb: 3 }}>
@@ -98,13 +136,16 @@ export default function ResultsDisplay({ results }) {
               <TableCell>{t('search.rank')}</TableCell>
               <TableCell>{t('search.cellIdHeader')}</TableCell>
               <TableCell>{t('search.cellName')}</TableCell>
+              {metadataColumns.map((column) => (
+                <TableCell key={column.key}>{column.label}</TableCell>
+              ))}
               <TableCell align="right">{t('search.distance')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={4 + metadataColumns.length} align="center">
                   {t('search.noResults')}
                 </TableCell>
               </TableRow>
@@ -114,6 +155,9 @@ export default function ResultsDisplay({ results }) {
                   <TableCell>{r.rank}</TableCell>
                   <TableCell>{r.cell_id}</TableCell>
                   <TableCell>{r.cell_name}</TableCell>
+                  {metadataColumns.map((column) => (
+                    <TableCell key={column.key}>{r[column.key] || '-'}</TableCell>
+                  ))}
                   <TableCell align="right">{r.distance.toFixed(6)}</TableCell>
                 </TableRow>
               ))

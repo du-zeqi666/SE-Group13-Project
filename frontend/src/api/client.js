@@ -13,8 +13,8 @@ client.interceptors.request.use((config) => {
 });
 
 // Auth
-export const login = (username, password) =>
-  client.post('/api/auth/login', { username, password });
+export const login = (identifier, password) =>
+  client.post('/api/auth/login', { identifier, password });
 
 export const register = (username, email, password) =>
   client.post('/api/auth/register', { username, email, password });

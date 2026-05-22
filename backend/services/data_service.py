@@ -3,21 +3,129 @@ import numpy as np
 import pandas as pd
 
 
+H5AD_METADATA_FIELDS = ("cell_type", "disease", "AgeGroup", "donor_id")
+
+
+def _decode_h5_value(value):
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    return str(value)
+
+
+def _empty_cell_metadata(count):
+    return [{} for _ in range(count)]
+
+
+def _read_categorical_group(group):
+    categories = [_decode_h5_value(item) for item in group["categories"][:]]
+    codes = group["codes"][:]
+
+    values = []
+    for code in codes:
+        index = int(code)
+        if 0 <= index < len(categories):
+            values.append(categories[index])
+        else:
+            values.append(None)
+    return values
+
+
+def _read_obs_values(obs_group, field_name):
+    if field_name not in obs_group:
+        return None
+
+    obj = obs_group[field_name]
+    if hasattr(obj, "dtype"):
+        return [_decode_h5_value(value) for value in obj[:]]
+    if "categories" in obj and "codes" in obj:
+        return _read_categorical_group(obj)
+    return None
+
+
+def _read_matrix(matrix_obj):
+    if hasattr(matrix_obj, "shape") and len(matrix_obj.shape) == 2:
+        return matrix_obj[:].astype(np.float32)
+
+    if all(key in matrix_obj for key in ("data", "indices", "indptr")):
+        shape_attr = matrix_obj.attrs.get("shape")
+        shape = tuple(shape_attr.tolist() if hasattr(shape_attr, "tolist") else shape_attr)
+        encoding = matrix_obj.attrs.get("encoding-type", b"")
+        if isinstance(encoding, bytes):
+            encoding = encoding.decode("utf-8")
+
+        data = matrix_obj["data"][:]
+        indices = matrix_obj["indices"][:]
+        indptr = matrix_obj["indptr"][:]
+
+        from scipy.sparse import csc_matrix, csr_matrix
+
+        if encoding == "csc_matrix":
+            matrix = csc_matrix((data, indices, indptr), shape=shape)
+        else:
+            matrix = csr_matrix((data, indices, indptr), shape=shape)
+        return matrix.toarray().astype(np.float32)
+
+    raise ValueError("Unsupported matrix encoding in HDF5 file")
+
+
+def _load_h5ad(path):
+    import h5py
+
+    with h5py.File(path, "r") as f:
+        obs_group = f["obs"]
+        obsm_group = f["obsm"]
+        var_group = f["var"]
+
+        if "X_pca" in obsm_group:
+            array = obsm_group["X_pca"][:].astype(np.float32)
+            feature_names = [f"PC{i + 1}" for i in range(array.shape[1])]
+        else:
+            array = _read_matrix(f["X"])
+            feature_names = _read_obs_values(var_group, "feature_name")
+            if not feature_names:
+                feature_names = _read_obs_values(var_group, "_index")
+            if not feature_names:
+                feature_names = [str(i) for i in range(array.shape[1])]
+
+        cell_names = _read_obs_values(obs_group, "_index")
+        if not cell_names:
+            cell_names = [str(i) for i in range(array.shape[0])]
+
+        metadata_columns = {
+            field: _read_obs_values(obs_group, field)
+            for field in H5AD_METADATA_FIELDS
+            if field in obs_group
+        }
+
+        cell_metadata = []
+        for row_index in range(array.shape[0]):
+            entry = {}
+            for field, values in metadata_columns.items():
+                if values and row_index < len(values) and values[row_index] is not None:
+                    entry[field] = values[row_index]
+            cell_metadata.append(entry)
+
+    return array, cell_names, feature_names, cell_metadata
+
+
 def load_csv(path):
-    """Load CSV/TSV file. Returns (array, cell_names, feature_names)."""
+    """Load CSV/TSV file. Returns (array, cell_names, feature_names, cell_metadata)."""
     sep = "\t" if path.endswith(".tsv") else ","
     df = pd.read_csv(path, sep=sep, index_col=0)
     cell_names = list(df.index.astype(str))
     feature_names = list(df.columns.astype(str))
     array = df.values.astype(np.float32)
-    return array, cell_names, feature_names
+    return array, cell_names, feature_names, _empty_cell_metadata(array.shape[0])
 
 
 def load_h5(path):
-    """Load HDF5 file (10x Genomics or generic). Returns (array, cell_names, feature_names)."""
+    """Load HDF5/AnnData file. Returns (array, cell_names, feature_names, cell_metadata)."""
     import h5py
 
     with h5py.File(path, "r") as f:
+        if all(key in f for key in ("obs", "obsm", "var", "X")):
+            return _load_h5ad(path)
+
         # Try 10x HDF5 format
         if "matrix" in f:
             grp = f["matrix"]
@@ -53,7 +161,7 @@ def load_h5(path):
             if array is None:
                 raise ValueError("No 2D dataset found in HDF5 file")
 
-    return array, cell_names, feature_names
+    return array, cell_names, feature_names, _empty_cell_metadata(array.shape[0])
 
 
 def validate_data(array):
@@ -76,7 +184,7 @@ def generate_random_data(n_cells=1000, n_features=50):
     array = rng.negative_binomial(1, 0.5, size=(n_cells, n_features)).astype(np.float32)
     cell_names = [f"cell_{i}" for i in range(n_cells)]
     feature_names = [f"gene_{i}" for i in range(n_features)]
-    return array, cell_names, feature_names
+    return array, cell_names, feature_names, _empty_cell_metadata(n_cells)
 
 
 def normalize_l2(array):

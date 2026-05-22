@@ -16,7 +16,7 @@ export default function Login() {
   const { login } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ identifier: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,13 +25,13 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.username || !form.password) {
+    if (!form.identifier || !form.password) {
       setError(t('login.fillAll'));
       return;
     }
     setLoading(true);
     try {
-      const res = await apiLogin(form.username, form.password);
+      const res = await apiLogin(form.identifier, form.password);
       login(res.data.access_token, res.data.user);
       navigate('/dashboard');
     } catch (err) {
@@ -51,12 +51,13 @@ export default function Login() {
         margin="normal"
         required
         fullWidth
-        label={t('login.username')}
-        name="username"
+        label={t('login.identifier')}
+        name="identifier"
         autoComplete="username"
         autoFocus
-        value={form.username}
+        value={form.identifier}
         onChange={handleChange}
+        placeholder={t('login.identifierPlaceholder')}
       />
       <TextField
         margin="normal"

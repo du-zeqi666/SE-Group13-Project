@@ -32,7 +32,7 @@ def _load_dataset_array(dataset_id):
     array = np.load(np_path)
     with open(meta_path, "r") as f:
         meta = json.load(f)
-    return array, meta["cell_names"], meta["feature_names"]
+    return array, meta["cell_names"], meta["feature_names"], meta.get("cell_metadata", [{} for _ in range(array.shape[0])])
 
 
 @index_bp.route("/build", methods=["POST"])
@@ -57,7 +57,7 @@ def build_index():
     if not ds:
         return jsonify({"error": "Dataset not found"}), 404
 
-    array, cell_names, feature_names = _load_dataset_array(dataset_id)
+    array, cell_names, feature_names, _ = _load_dataset_array(dataset_id)
     if array is None:
         return jsonify({"error": "Dataset data not found on disk"}), 404
 

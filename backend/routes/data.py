@@ -31,13 +31,21 @@ data_bp = Blueprint("data", __name__, url_prefix="/api/data")
 ALLOWED_EXTENSIONS = {".csv", ".tsv", ".h5", ".h5ad"}
 
 
-def _save_numpy(array, cell_names, feature_names, dataset_id):
+def _save_numpy(array, cell_names, feature_names, dataset_id, cell_metadata=None):
     np_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}.npy")
     meta_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}_meta.json")
     np.save(np_path, array)
     with open(meta_path, "w") as f:
         import json
-        json.dump({"cell_names": cell_names, "feature_names": feature_names}, f)
+        json.dump(
+            {
+                "cell_names": cell_names,
+                "feature_names": feature_names,
+                "cell_metadata": cell_metadata or [{} for _ in range(len(cell_names))],
+            },
+            f,
+            ensure_ascii=False,
+        )
     return np_path
 
 
@@ -53,7 +61,7 @@ def _load_dataset_array(dataset_id):
     with open(meta_path, "r") as f:
         import json
         meta = json.load(f)
-    return array, meta["cell_names"], meta["feature_names"]
+    return array, meta["cell_names"], meta["feature_names"], meta.get("cell_metadata", [{} for _ in range(array.shape[0])])
 
 
 @data_bp.route("/upload", methods=["POST"])
@@ -78,16 +86,16 @@ def upload():
 
     try:
         if ext in (".h5", ".h5ad"):
-            array, cell_names, feature_names = load_h5(upload_path)
+            array, cell_names, feature_names, cell_metadata = load_h5(upload_path)
         else:
-            array, cell_names, feature_names = load_csv(upload_path)
+            array, cell_names, feature_names, cell_metadata = load_csv(upload_path)
 
         validation = validate_data(array)
         if not validation["valid"]:
             os.remove(upload_path)
             return jsonify({"error": validation["message"]}), 422
 
-        _save_numpy(array, cell_names, feature_names, dataset_id)
+        _save_numpy(array, cell_names, feature_names, dataset_id, cell_metadata=cell_metadata)
     except Exception:
         if os.path.exists(upload_path):
             os.remove(upload_path)
@@ -123,10 +131,10 @@ def upload():
 @jwt_required()
 def generate_demo():
     user_id = get_jwt_identity()
-    array, cell_names, feature_names = generate_random_data(1000, 50)
+    array, cell_names, feature_names, cell_metadata = generate_random_data(1000, 50)
 
     dataset_id = str(uuid.uuid4())
-    _save_numpy(array, cell_names, feature_names, dataset_id)
+    _save_numpy(array, cell_names, feature_names, dataset_id, cell_metadata=cell_metadata)
 
     dataset = Dataset.create(
         id=dataset_id,
@@ -216,7 +224,7 @@ def preprocess_dataset(dataset_id):
     body = request.get_json(silent=True) or {}
     method = body.get("method", "normalize")
 
-    array, cell_names, feature_names = _load_dataset_array(dataset_id)
+    array, cell_names, feature_names, cell_metadata = _load_dataset_array(dataset_id)
     if array is None:
         return jsonify({"error": "Dataset data not found on disk"}), 404
 
@@ -229,7 +237,7 @@ def preprocess_dataset(dataset_id):
     else:
         return jsonify({"error": f"Unknown method: {method}"}), 400
 
-    _save_numpy(array.astype(np.float32), cell_names, feature_names, dataset_id)
+    _save_numpy(array.astype(np.float32), cell_names, feature_names, dataset_id, cell_metadata=cell_metadata)
     ds.status = f"preprocessed ({label})"
     db.session.commit()
     return jsonify({"message": f"Dataset preprocessed: {label}", "shape": list(array.shape)})

@@ -54,6 +54,10 @@ export default function ProfilePage() {
       setPasswordError(t('profile.fillAll'));
       return;
     }
+    if (passwordForm.current_password === passwordForm.new_password) {
+      setPasswordError(t('profile.passwordSameAsCurrent'));
+      return;
+    }
     if (passwordForm.new_password !== passwordForm.confirm_password) {
       setPasswordError(t('profile.passwordMismatch'));
       return;

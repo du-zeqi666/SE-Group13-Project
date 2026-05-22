@@ -20,9 +20,10 @@ English version: [README.md](README.md)
 - 支持 CSV、TSV、HDF5、H5AD 数据集上传，并可一键生成演示数据
 - 支持 L2 归一化和按特征标准化的数据预处理
 - 支持构建 FAISS Flat、FAISS IVF 和 Annoy 索引
-- 支持按原始向量或按细胞 ID 检索，并可配置 k 值和距离度量
+- 支持按原始向量或按细胞 ID 检索，并可配置 k 值、距离度量和元数据过滤条件
 - 支持结果排序展示、图表展示、CSV 导出和最近搜索历史
 - 前端支持中英文界面切换
+- 补充了开发文档、用户手册和测试报告
 
 ---
 
@@ -230,6 +231,8 @@ npm start
 - 索引：`POST /api/index/build`、`GET /api/index/list`、`GET /api/index/<id>`、`DELETE /api/index/<id>`
 - 搜索：`POST /api/search/query`、`POST /api/search/query_by_id`、`GET /api/search/history`
 
+`POST /api/search/query` 和 `POST /api/search/query_by_id` 额外支持可选的 `filters` 对象，可按 `cell_type`、`disease`、`AgeGroup`、`donor_id` 做条件检索。
+
 ---
 
 ## 项目结构
@@ -269,6 +272,10 @@ npm start
 │           ├── DashboardPage.js
 │           ├── ProfilePage.js
 │           └── SearchPage.js
+├── docs/
+│   ├── development-guide.md
+│   ├── test-report.md
+│   └── user-manual.md
 ├── scripts/
 │   ├── start_project.ps1
 │   └── stop_project.ps1

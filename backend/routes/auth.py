@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 from models import db
@@ -37,15 +38,17 @@ def register():
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True) or {}
-    username = (data.get("username") or "").strip()
+    identifier = (data.get("identifier") or data.get("username") or "").strip()
     password = data.get("password") or ""
 
-    if not username or not password:
-        return jsonify({"error": "username and password are required"}), 400
+    if not identifier or not password:
+        return jsonify({"error": "username/email and password are required"}), 400
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter(
+        or_(User.username == identifier, User.email == identifier)
+    ).first()
     if not user or not user.check_password(password):
-        return jsonify({"error": "Invalid username or password"}), 401
+        return jsonify({"error": "Invalid username/email or password"}), 401
 
     access_token = create_access_token(identity=user.id)
     return jsonify({

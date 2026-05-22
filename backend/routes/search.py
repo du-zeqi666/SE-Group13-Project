@@ -21,6 +21,7 @@ from services.ann_service import (
 search_bp = Blueprint("search", __name__, url_prefix="/api/search")
 
 MAX_HISTORY = 10
+FILTER_FIELDS = ("cell_type", "disease", "AgeGroup", "donor_id")
 
 
 def _load_dataset_array(dataset_id):
@@ -32,7 +33,53 @@ def _load_dataset_array(dataset_id):
     array = np.load(np_path)
     with open(meta_path, "r") as f:
         meta = json.load(f)
-    return array, meta["cell_names"], meta["feature_names"]
+    return array, meta["cell_names"], meta["feature_names"], meta.get("cell_metadata", [{} for _ in range(array.shape[0])])
+
+
+def _cell_info(cell_names, cell_metadata, index):
+    cell_name = cell_names[index] if 0 <= index < len(cell_names) else f"cell_{index}"
+    info = {"cell_name": cell_name}
+    if 0 <= index < len(cell_metadata) and isinstance(cell_metadata[index], dict):
+        info.update(cell_metadata[index])
+    return info
+
+
+def _extract_filters(payload):
+    raw_filters = payload.get("filters") or {}
+    if not isinstance(raw_filters, dict):
+        return {}
+
+    filters = {}
+    for field in FILTER_FIELDS:
+        value = raw_filters.get(field)
+        if value is None:
+            continue
+        value = str(value).strip()
+        if value:
+            filters[field] = value
+    return filters
+
+
+def _matches_filters(cell_info, filters):
+    if not filters:
+        return True
+
+    for field, expected in filters.items():
+        actual = cell_info.get(field)
+        if actual is None:
+            return False
+        if str(actual).strip().lower() != expected.strip().lower():
+            return False
+    return True
+
+
+def _search_limit(requested_k, total_cells, has_filters, exclude_self=False):
+    if not has_filters:
+        return requested_k + (1 if exclude_self else 0)
+    base = max(requested_k * 20, 100)
+    if exclude_self:
+        base += 1
+    return min(base, total_cells)
 
 
 def _add_to_history(user_id, entry):
@@ -98,6 +145,7 @@ def query():
     query_vector = body.get("query_vector")
     k = int(body.get("k", 10))
     metric = body.get("metric")  # optional override display
+    filters = _extract_filters(body)
 
     if not index_id:
         return jsonify({"error": "index_id is required"}), 400
@@ -110,12 +158,16 @@ def query():
     if not index_meta:
         return jsonify({"error": "Index not found"}), 404
 
-    _, cell_names, _ = _load_dataset_array(index_meta.dataset_id)
+    _, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id)
     if cell_names is None:
         return jsonify({"error": "Dataset data not found"}), 404
 
     try:
-        distances, indices, query_time_ms = _run_search(index_meta, query_vector, k)
+        distances, indices, query_time_ms = _run_search(
+            index_meta,
+            query_vector,
+            _search_limit(k, index_meta.n_cells, bool(filters)),
+        )
     except ValueError:
         return jsonify({"error": "Invalid query vector: dimension mismatch or bad values."}), 400
     except Exception:
@@ -123,13 +175,17 @@ def query():
 
     results = []
     for rank, (dist, idx) in enumerate(zip(distances, indices), start=1):
-        cell_name = cell_names[idx] if 0 <= idx < len(cell_names) else f"cell_{idx}"
+        cell_info = _cell_info(cell_names, cell_metadata, idx)
+        if not _matches_filters(cell_info, filters):
+            continue
         results.append({
-            "rank": rank,
+            "rank": len(results) + 1,
             "cell_id": idx,
-            "cell_name": cell_name,
+            **cell_info,
             "distance": float(dist),
         })
+        if len(results) >= k:
+            break
 
     _add_to_history(user_id, {
         "id": str(uuid.uuid4()),
@@ -145,6 +201,7 @@ def query():
         "query_time_ms": query_time_ms,
         "k": k,
         "metric": metric or index_meta.metric,
+        "filters": filters,
     })
 
 
@@ -157,6 +214,7 @@ def query_by_id():
     index_id = body.get("index_id")
     cell_id = body.get("cell_id")
     k = int(body.get("k", 10))
+    filters = _extract_filters(body)
 
     if not index_id:
         return jsonify({"error": "index_id is required"}), 400
@@ -167,7 +225,7 @@ def query_by_id():
     if not index_meta:
         return jsonify({"error": "Index not found"}), 404
 
-    array, cell_names, _ = _load_dataset_array(index_meta.dataset_id)
+    array, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id)
     if array is None:
         return jsonify({"error": "Dataset data not found"}), 404
 
@@ -186,24 +244,28 @@ def query_by_id():
     query_vector = array[idx].tolist()
 
     try:
-        distances, indices, query_time_ms = _run_search(index_meta, query_vector, k + 1)
+        distances, indices, query_time_ms = _run_search(
+            index_meta,
+            query_vector,
+            _search_limit(k, index_meta.n_cells, bool(filters), exclude_self=True),
+        )
     except Exception:
         return jsonify({"error": "Search failed. Check index and query."}), 500
 
     results = []
-    rank = 1
     for dist, i in zip(distances, indices):
         if int(i) == idx:
             continue  # skip the query cell itself
-        cell_name = cell_names[i] if 0 <= i < len(cell_names) else f"cell_{i}"
+        cell_info = _cell_info(cell_names, cell_metadata, i)
+        if not _matches_filters(cell_info, filters):
+            continue
         results.append({
-            "rank": rank,
+            "rank": len(results) + 1,
             "cell_id": int(i),
-            "cell_name": cell_name,
+            **cell_info,
             "distance": float(dist),
         })
-        rank += 1
-        if rank > k:
+        if len(results) >= k:
             break
 
     _add_to_history(user_id, {
@@ -222,6 +284,7 @@ def query_by_id():
         "k": k,
         "metric": index_meta.metric,
         "query_cell": cell_names[idx] if idx < len(cell_names) else str(idx),
+        "filters": filters,
     })
 
 

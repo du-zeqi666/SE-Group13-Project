@@ -20,9 +20,10 @@ This project is a full-stack web application for Approximate Nearest Neighbor se
 - CSV, TSV, HDF5, and H5AD dataset upload, plus one-click demo dataset generation
 - Dataset preprocessing with L2 normalization or per-feature standardization
 - FAISS Flat, FAISS IVF, and Annoy index construction
-- Search by raw vector or by cell ID, with configurable k and distance metric
+- Search by raw vector or by cell ID, with configurable k, distance metric, and metadata filters
 - Ranked results, chart visualization, CSV export, and recent search history
 - Chinese and English frontend interface switching
+- Delivery documents including development guide, user manual, and test report
 
 ---
 
@@ -230,6 +231,8 @@ All endpoints are prefixed with `/api`.
 - Index: `POST /api/index/build`, `GET /api/index/list`, `GET /api/index/<id>`, `DELETE /api/index/<id>`
 - Search: `POST /api/search/query`, `POST /api/search/query_by_id`, `GET /api/search/history`
 
+`POST /api/search/query` and `POST /api/search/query_by_id` also accept an optional `filters` object with `cell_type`, `disease`, `AgeGroup`, and `donor_id` for conditional retrieval.
+
 ---
 
 ## Project Structure
@@ -269,6 +272,10 @@ All endpoints are prefixed with `/api`.
 │           ├── DashboardPage.js
 │           ├── ProfilePage.js
 │           └── SearchPage.js
+├── docs/
+│   ├── development-guide.md
+│   ├── test-report.md
+│   └── user-manual.md
 ├── scripts/
 │   ├── start_project.ps1
 │   └── stop_project.ps1

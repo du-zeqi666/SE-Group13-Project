@@ -95,6 +95,8 @@ def update_my_password():
         return jsonify({"error": "current_password and new_password are required"}), 400
     if not user.check_password(current_password):
         return jsonify({"error": "Current password is incorrect"}), 400
+    if user.check_password(new_password):
+        return jsonify({"error": "New password must be different from the current password"}), 400
     if len(new_password) < 6:
         return jsonify({"error": "New password must be at least 6 characters"}), 400
 
@@ -179,6 +181,8 @@ def reset_user_password(user_id):
     new_password = data.get("new_password") or ""
     if len(new_password) < 6:
         return jsonify({"error": "New password must be at least 6 characters"}), 400
+    if user.check_password(new_password):
+        return jsonify({"error": "New password must be different from the current password"}), 400
 
     user.set_password(new_password)
     db.session.commit()
