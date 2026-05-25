@@ -13,3 +13,5 @@ h5py==3.9.0
 scipy==1.11.2
 python-dotenv==1.0.0
 pytest==7.4.2
+chromadb==1.5.9
+sentence-transformers==5.1.2

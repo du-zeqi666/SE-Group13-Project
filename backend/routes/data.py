@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 
 from config import Config
 from models import db
-from models.metadata import Dataset, SearchHistory, SearchIndex
+from models.metadata import Dataset, SearchHistory, SearchIndex, JointIndexDataset
 from services.data_service import (
     load_csv,
     load_h5,
@@ -285,6 +285,19 @@ def delete_dataset(dataset_id):
     ds = Dataset.query.filter_by(id=dataset_id, owner_id=user_id).first()
     if not ds:
         return jsonify({"error": "Dataset not found"}), 404
+
+    # Prevent deletion if dataset is in an active joint index
+    active_links = JointIndexDataset.query.filter_by(dataset_id=dataset_id).all()
+    if active_links:
+        joint_names = []
+        for link in active_links:
+            from models.metadata import JointIndex
+            ji = JointIndex.query.get(link.joint_index_id)
+            if ji:
+                joint_names.append(ji.name)
+        return jsonify({
+            "error": f"Dataset is used in {len(active_links)} joint index(es): {', '.join(joint_names)}. Remove it from those joint indices first."
+        }), 409
 
     index_ids = [index.id for index in ds.indices]
     for index in ds.indices:

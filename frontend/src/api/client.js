@@ -66,4 +66,22 @@ export const searchById = (payload) => client.post('/api/search/query_by_id', pa
 
 export const getHistory = () => client.get('/api/search/history');
 
+// Joint Index
+export const buildJointIndex = (payload) => client.post('/api/joint/build', payload);
+
+export const listJointIndices = () => client.get('/api/joint/list');
+
+export const getJointIndex = (id) => client.get(`/api/joint/${id}`);
+
+export const deleteJointIndex = (id) => client.delete(`/api/joint/${id}`);
+
+export const queryJointIndex = (payload) => client.post('/api/joint/query', payload);
+
+export const listJointDatasets = (id) => client.get(`/api/joint/${id}/datasets`);
+
+// RAG
+export const ragSearch = (payload) => client.post('/api/rag/search', payload);
+
+export const ragAnalyze = (payload) => client.post('/api/rag/analyze', payload);
+
 export default client;
