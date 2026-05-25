@@ -19,3 +19,6 @@ data/*.mtx
 node_modules/
 build/
 .env.local
+
+# CLAUDE
+CLUADE.md
