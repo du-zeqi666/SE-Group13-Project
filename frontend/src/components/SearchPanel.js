@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -35,9 +35,17 @@ export default function SearchPanel({ indices, onResults }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const selectedIndex = indices.find((i) => i.id === indexId);
+
   const activeFilters = Object.fromEntries(
     Object.entries(filters).filter(([, value]) => value.trim())
   );
+
+  useEffect(() => {
+    if (selectedIndex?.metric) {
+      setMetric(selectedIndex.metric);
+    }
+  }, [selectedIndex?.metric]);
 
   const handleSearch = async () => {
     setError('');
@@ -80,8 +88,6 @@ export default function SearchPanel({ indices, onResults }) {
       setLoading(false);
     }
   };
-
-  const selectedIndex = indices.find((i) => i.id === indexId);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -168,12 +174,22 @@ export default function SearchPanel({ indices, onResults }) {
 
       <FormControl fullWidth size="small">
         <InputLabel>{t('search.distanceMetric')}</InputLabel>
-        <Select value={metric} label={t('search.distanceMetric')} onChange={(e) => setMetric(e.target.value)}>
+        <Select
+          value={metric}
+          label={t('search.distanceMetric')}
+          onChange={(e) => setMetric(e.target.value)}
+          disabled={Boolean(selectedIndex)}
+        >
           <MenuItem value="l2">L2 (Euclidean)</MenuItem>
           <MenuItem value="cosine">Cosine</MenuItem>
           <MenuItem value="ip">Inner Product</MenuItem>
         </Select>
       </FormControl>
+      {selectedIndex && (
+        <Typography variant="caption" color="text.secondary">
+          {t('search.metricLocked', { metric: selectedIndex.metric?.toUpperCase() })}
+        </Typography>
+      )}
 
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
         <Typography variant="subtitle2" sx={{ gridColumn: '1 / -1' }}>
