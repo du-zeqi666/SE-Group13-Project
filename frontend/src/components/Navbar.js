@@ -34,6 +34,12 @@ export default function Navbar() {
           <Button color="inherit" component={RouterLink} to="/dashboard">
             {t('nav.dashboard')}
           </Button>
+          <Button color="inherit" component={RouterLink} to="/dashboard/data">
+            {t('nav.dataManagement')}
+          </Button>
+          <Button color="inherit" component={RouterLink} to="/dashboard/index">
+            {t('nav.indexManagement')}
+          </Button>
           <Button color="inherit" component={RouterLink} to="/search">
             {t('nav.search')}
           </Button>

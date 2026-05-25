@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
+import DashboardDataPage from './pages/DashboardDataPage';
+import DashboardIndexPage from './pages/DashboardIndexPage';
 import SearchPage from './pages/SearchPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
@@ -106,6 +108,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/data"
+              element={
+                <ProtectedRoute>
+                  <DashboardDataPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/index"
+              element={
+                <ProtectedRoute>
+                  <DashboardIndexPage />
                 </ProtectedRoute>
               }
             />

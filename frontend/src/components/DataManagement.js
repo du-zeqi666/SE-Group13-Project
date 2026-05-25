@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Button,
+  TextField,
   Typography,
   Table,
   TableBody,
@@ -28,7 +29,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import TuneIcon from '@mui/icons-material/Tune';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import { uploadDataset, deleteDataset, preprocessDataset, generateDemo } from '../api/client';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { uploadDataset, deleteDataset, preprocessDataset, generateDemo, importLocalDataset, listLocalDatasetFiles } from '../api/client';
 import { useI18n } from '../App';
 
 export default function DataManagement({ datasets, onRefresh }) {
@@ -40,6 +43,8 @@ export default function DataManagement({ datasets, onRefresh }) {
   const [preprocessDialog, setPreprocessDialog] = useState({ open: false, datasetId: null });
   const [preprocessMethod, setPreprocessMethod] = useState('normalize');
   const [dragging, setDragging] = useState(false);
+  const [localImport, setLocalImport] = useState({ path: 'liver.h5ad', name: '' });
+  const [localFiles, setLocalFiles] = useState([]);
 
   const handleFile = useCallback(
     async (file) => {
@@ -115,6 +120,48 @@ export default function DataManagement({ datasets, onRefresh }) {
     }
   };
 
+  const loadLocalFiles = useCallback(async () => {
+    try {
+      const res = await listLocalDatasetFiles();
+      const files = res.data.files || [];
+      setLocalFiles(files);
+      setLocalImport((current) => {
+        if (current.path && files.includes(current.path)) {
+          return current;
+        }
+        return { ...current, path: files[0] || '' };
+      });
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    loadLocalFiles();
+  }, [loadLocalFiles]);
+
+  const handleImportLocal = async () => {
+    setError('');
+    setSuccess('');
+    if (!localImport.path.trim()) {
+      setError(t('data.localImportPathRequired'));
+      return;
+    }
+
+    try {
+      const res = await importLocalDataset({
+        path: localImport.path.trim(),
+        name: localImport.name.trim() || undefined,
+      });
+      setSuccess(t('data.localImportSuccess', {
+        path: res.data.path,
+        cells: res.data.cell_count,
+        features: res.data.feature_count,
+      }));
+      onRefresh();
+    } catch (err) {
+      setError(err.response?.data?.error || t('data.localImportFailed'));
+    }
+  };
+
   const localizeStatus = (status) => {
     if (status === 'ready') return t('data.statusReady');
     if (status?.startsWith('preprocessed')) {
@@ -184,6 +231,52 @@ export default function DataManagement({ datasets, onRefresh }) {
           {t('data.demoButton')}
         </Button>
       </Box>
+
+      <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="subtitle2">
+            {t('data.localImportTitle')}
+          </Typography>
+          <Button size="small" startIcon={<RefreshIcon />} onClick={loadLocalFiles}>
+            {t('data.refreshLocalFiles')}
+          </Button>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {t('data.localImportDescription')}
+        </Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 2fr auto' }, gap: 2 }}>
+          <FormControl fullWidth size="small">
+            <InputLabel>{t('data.localImportPath')}</InputLabel>
+            <Select
+              value={localImport.path}
+              label={t('data.localImportPath')}
+              onChange={(e) => setLocalImport((current) => ({ ...current, path: e.target.value }))}
+            >
+              {localFiles.length === 0 ? (
+                <MenuItem disabled value="">
+                  {t('data.noLocalFiles')}
+                </MenuItem>
+              ) : (
+                localFiles.map((filePath) => (
+                  <MenuItem key={filePath} value={filePath}>
+                    {filePath}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+          <TextField
+            label={t('data.localImportName')}
+            value={localImport.name}
+            onChange={(e) => setLocalImport((current) => ({ ...current, name: e.target.value }))}
+            size="small"
+            placeholder={t('data.localImportNamePlaceholder')}
+          />
+          <Button variant="contained" startIcon={<FolderOpenIcon />} onClick={handleImportLocal} disabled={!localImport.path}>
+            {t('data.localImportButton')}
+          </Button>
+        </Box>
+      </Paper>
 
       {/* Dataset table */}
       <TableContainer component={Paper} variant="outlined">

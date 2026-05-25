@@ -27,5 +27,6 @@ class Config:
     STORAGE_PATH = os.path.join(os.path.dirname(__file__), "storage")
     UPLOAD_FOLDER = os.path.join(STORAGE_PATH, "uploads")
     INDEX_FOLDER = os.path.join(STORAGE_PATH, "indices")
+    DATA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 
-    MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100MB
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH_MB", "100")) * 1024 * 1024

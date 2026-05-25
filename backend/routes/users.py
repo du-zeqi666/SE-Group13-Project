@@ -11,6 +11,15 @@ from models.user import User
 users_bp = Blueprint("users", __name__, url_prefix="/api/users")
 
 
+def _is_managed_upload_path(path):
+    if not path:
+        return False
+    try:
+        return os.path.commonpath([os.path.abspath(path), os.path.abspath(Config.UPLOAD_FOLDER)]) == os.path.abspath(Config.UPLOAD_FOLDER)
+    except ValueError:
+        return False
+
+
 def _get_current_user():
     user_id = get_jwt_identity()
     return db.session.get(User, user_id)
@@ -55,7 +64,7 @@ def _cleanup_user_storage(user):
             path = os.path.join(Config.UPLOAD_FOLDER, f"{safe_id}{suffix}")
             if os.path.exists(path):
                 os.remove(path)
-        if dataset.original_file and os.path.exists(dataset.original_file):
+        if dataset.original_file and _is_managed_upload_path(dataset.original_file) and os.path.exists(dataset.original_file):
             os.remove(dataset.original_file)
 
     if index_ids:

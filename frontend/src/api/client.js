@@ -37,6 +37,10 @@ export const uploadDataset = (formData, onProgress) =>
 
 export const generateDemo = () => client.post('/api/data/generate_demo');
 
+export const importLocalDataset = (payload) => client.post('/api/data/import_local', payload);
+
+export const listLocalDatasetFiles = () => client.get('/api/data/local_files');
+
 export const listDatasets = () => client.get('/api/data/datasets');
 
 export const getDataset = (id) => client.get(`/api/data/datasets/${id}`);

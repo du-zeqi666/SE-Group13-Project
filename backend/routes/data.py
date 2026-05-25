@@ -49,6 +49,82 @@ def _save_numpy(array, cell_names, feature_names, dataset_id, cell_metadata=None
     return np_path
 
 
+def _is_managed_upload_path(path):
+    if not path:
+        return False
+    try:
+        return os.path.commonpath([os.path.abspath(path), os.path.abspath(Config.UPLOAD_FOLDER)]) == os.path.abspath(Config.UPLOAD_FOLDER)
+    except ValueError:
+        return False
+
+
+def _create_dataset_record(dataset_id, name, owner_id, array, cell_names, feature_names, original_file=None, status="ready"):
+    dataset = Dataset.create(
+        id=dataset_id,
+        name=name,
+        owner_id=owner_id,
+        shape_rows=array.shape[0],
+        shape_cols=array.shape[1],
+        cell_count=array.shape[0],
+        feature_count=array.shape[1],
+        cell_names_preview=cell_names[:5],
+        feature_names_preview=feature_names[:5],
+        original_file=original_file,
+        status=status,
+        created_at=datetime.utcnow(),
+    )
+    db.session.add(dataset)
+    db.session.commit()
+    return dataset
+
+
+def _load_file_by_extension(file_path):
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise ValueError(f"Unsupported file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}")
+    if ext in (".h5", ".h5ad"):
+        return load_h5(file_path)
+    return load_csv(file_path)
+
+
+def _resolve_local_data_path(path_value):
+    raw_path = (path_value or "").strip()
+    if not raw_path:
+        raise ValueError("path is required")
+
+    candidate = raw_path
+    if not os.path.isabs(candidate):
+        candidate = os.path.abspath(os.path.join(Config.DATA_ROOT, candidate))
+    else:
+        candidate = os.path.abspath(candidate)
+
+    data_root = os.path.abspath(Config.DATA_ROOT)
+    try:
+        inside_root = os.path.commonpath([candidate, data_root]) == data_root
+    except ValueError:
+        inside_root = False
+    if not inside_root:
+        raise ValueError("Only files inside the local data directory are allowed")
+    if not os.path.exists(candidate):
+        raise FileNotFoundError("Local dataset file not found")
+
+    return candidate
+
+
+def _list_local_importable_files():
+    candidates = []
+    for root, _, files in os.walk(Config.DATA_ROOT):
+        for file_name in files:
+            ext = os.path.splitext(file_name)[1].lower()
+            if ext not in ALLOWED_EXTENSIONS:
+                continue
+            absolute_path = os.path.join(root, file_name)
+            relative_path = os.path.relpath(absolute_path, Config.DATA_ROOT).replace("\\", "/")
+            candidates.append(relative_path)
+    candidates.sort()
+    return candidates
+
+
 def _load_dataset_array(dataset_id):
     if not _valid_uuid(dataset_id):
         return None, None, None
@@ -85,10 +161,7 @@ def upload():
     file.save(upload_path)
 
     try:
-        if ext in (".h5", ".h5ad"):
-            array, cell_names, feature_names, cell_metadata = load_h5(upload_path)
-        else:
-            array, cell_names, feature_names, cell_metadata = load_csv(upload_path)
+        array, cell_names, feature_names, cell_metadata = _load_file_by_extension(upload_path)
 
         validation = validate_data(array)
         if not validation["valid"]:
@@ -101,22 +174,7 @@ def upload():
             os.remove(upload_path)
         return jsonify({"error": "Failed to parse file. Check format and content."}), 422
 
-    dataset = Dataset.create(
-        id=dataset_id,
-        name=safe_name,
-        owner_id=user_id,
-        shape_rows=array.shape[0],
-        shape_cols=array.shape[1],
-        cell_count=array.shape[0],
-        feature_count=array.shape[1],
-        cell_names_preview=cell_names[:5],
-        feature_names_preview=feature_names[:5],
-        original_file=upload_path,
-        status="ready",
-        created_at=datetime.utcnow(),
-    )
-    db.session.add(dataset)
-    db.session.commit()
+    _create_dataset_record(dataset_id, safe_name, user_id, array, cell_names, feature_names, original_file=upload_path)
 
     return jsonify({
         "dataset_id": dataset_id,
@@ -136,22 +194,7 @@ def generate_demo():
     dataset_id = str(uuid.uuid4())
     _save_numpy(array, cell_names, feature_names, dataset_id, cell_metadata=cell_metadata)
 
-    dataset = Dataset.create(
-        id=dataset_id,
-        name="demo_data.csv",
-        owner_id=user_id,
-        shape_rows=array.shape[0],
-        shape_cols=array.shape[1],
-        cell_count=array.shape[0],
-        feature_count=array.shape[1],
-        cell_names_preview=cell_names[:5],
-        feature_names_preview=feature_names[:5],
-        original_file=None,
-        status="ready",
-        created_at=datetime.utcnow(),
-    )
-    db.session.add(dataset)
-    db.session.commit()
+    _create_dataset_record(dataset_id, "demo_data.csv", user_id, array, cell_names, feature_names)
 
     return jsonify({
         "dataset_id": dataset_id,
@@ -160,6 +203,56 @@ def generate_demo():
         "feature_count": array.shape[1],
         "message": "Demo dataset generated (1000 cells × 50 features)",
     }), 201
+
+
+@data_bp.route("/import_local", methods=["POST"])
+@jwt_required()
+def import_local_dataset():
+    user_id = get_jwt_identity()
+    body = request.get_json(silent=True) or {}
+
+    try:
+        local_path = _resolve_local_data_path(body.get("path"))
+        array, cell_names, feature_names, cell_metadata = _load_file_by_extension(local_path)
+        validation = validate_data(array)
+        if not validation["valid"]:
+            return jsonify({"error": validation["message"]}), 422
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 404
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        return jsonify({"error": "Failed to import local dataset. Check format and content."}), 422
+
+    dataset_id = str(uuid.uuid4())
+    _save_numpy(array, cell_names, feature_names, dataset_id, cell_metadata=cell_metadata)
+
+    dataset_name = (body.get("name") or os.path.basename(local_path)).strip() or os.path.basename(local_path)
+    _create_dataset_record(
+        dataset_id,
+        dataset_name,
+        user_id,
+        array,
+        cell_names,
+        feature_names,
+        original_file=local_path,
+        status="ready (local import)",
+    )
+
+    return jsonify({
+        "dataset_id": dataset_id,
+        "shape": list(array.shape),
+        "cell_count": array.shape[0],
+        "feature_count": array.shape[1],
+        "message": "Local dataset imported successfully",
+        "path": os.path.relpath(local_path, Config.DATA_ROOT).replace("\\", "/"),
+    }), 201
+
+
+@data_bp.route("/local_files", methods=["GET"])
+@jwt_required()
+def list_local_files():
+    return jsonify({"files": _list_local_importable_files()})
 
 
 @data_bp.route("/datasets", methods=["GET"])
@@ -205,7 +298,7 @@ def delete_dataset(dataset_id):
         p = os.path.join(Config.UPLOAD_FOLDER, f"{safe_id}{suffix}")
         if os.path.exists(p):
             os.remove(p)
-    if ds.original_file and os.path.exists(ds.original_file):
+    if ds.original_file and _is_managed_upload_path(ds.original_file) and os.path.exists(ds.original_file):
         os.remove(ds.original_file)
 
     db.session.delete(ds)
