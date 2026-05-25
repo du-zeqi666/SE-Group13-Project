@@ -187,7 +187,7 @@ export default function DataManagement({ datasets, onRefresh }) {
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         sx={{
-          border: `2px dashed ${dragging ? '#1976d2' : '#aaa'}`,
+          border: (theme) => `2px dashed ${dragging ? theme.palette.primary.main : theme.palette.divider}`,
           borderRadius: 2,
           p: 4,
           textAlign: 'center',

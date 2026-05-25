@@ -13,6 +13,7 @@ import {
   Chip,
   Stack,
 } from '@mui/material';
+import { useTheme } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import {
   BarChart,
@@ -27,6 +28,7 @@ import { useI18n } from '../App';
 
 export default function ResultsDisplay({ results }) {
   const { t } = useI18n();
+  const theme = useTheme();
 
   if (!results) {
     return (
@@ -123,7 +125,7 @@ export default function ResultsDisplay({ results }) {
               <XAxis dataKey="name" angle={-45} textAnchor="end" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
-              <Bar dataKey="distance" fill="#1976d2" />
+              <Bar dataKey="distance" fill={theme.palette.primary.main} />
             </BarChart>
           </ResponsiveContainer>
         </Box>

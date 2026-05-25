@@ -11,6 +11,8 @@ const translations = {
       roleAdmin: 'Admin',
       roleUser: 'User',
       switchLanguage: '中文',
+      darkMode: 'Dark Mode',
+      lightMode: 'Light Mode',
     },
     auth: {
       subtitle: 'High-dimensional single-cell data analysis',
@@ -213,6 +215,8 @@ const translations = {
       roleAdmin: '管理员',
       roleUser: '普通用户',
       switchLanguage: 'EN',
+      darkMode: '深色模式',
+      lightMode: '浅色模式',
     },
     auth: {
       subtitle: '高维单细胞数据分析',

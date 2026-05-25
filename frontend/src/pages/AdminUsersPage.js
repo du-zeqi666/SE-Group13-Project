@@ -141,7 +141,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <Navbar />
       <Container maxWidth="lg" sx={{ py: 3 }}>
         <Typography variant="h4" gutterBottom>

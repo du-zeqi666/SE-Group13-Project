@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import AuthPage from './pages/AuthPage';
@@ -11,10 +11,58 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import { getMe } from './api/client';
 import { translate } from './i18n';
 
-const theme = createTheme({
+const getDesignTokens = (mode) => ({
   palette: {
-    primary: { main: '#1976d2' },
-    secondary: { main: '#9c27b0' },
+    mode,
+    ...(mode === 'light'
+      ? {
+          primary: { main: '#1976d2' },
+          secondary: { main: '#7c4dff' },
+          background: { default: '#f5f7fa', paper: '#ffffff' },
+        }
+      : {
+          primary: { main: '#90caf9' },
+          secondary: { main: '#b388ff' },
+          background: { default: '#0a1929', paper: '#132f4c' },
+          divider: 'rgba(194,224,255,0.12)',
+        }),
+  },
+  typography: {
+    fontFamily: [
+      '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto',
+      '"Helvetica Neue"', 'Arial', 'sans-serif', '"Microsoft YaHei"',
+    ].join(','),
+  },
+  shape: { borderRadius: 10 },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: { textTransform: 'none', borderRadius: 8, fontWeight: 600 },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: { borderRadius: 12, backgroundImage: 'none' },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+          ...(mode === 'dark' && { backgroundColor: '#132f4c' }),
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: { borderRadius: 8 },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        head: { fontWeight: 700 },
+      },
+    },
   },
 });
 
@@ -46,6 +94,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'en');
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('themeMode') || 'light');
+
+  const theme = useMemo(() => createTheme(getDesignTokens(themeMode)), [themeMode]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -65,6 +116,10 @@ export default function App() {
     localStorage.setItem('language', language);
   }, [language]);
 
+  useEffect(() => {
+    localStorage.setItem('themeMode', themeMode);
+  }, [themeMode]);
+
   const login = (token, userData) => {
     localStorage.setItem('token', token);
     setUser(userData);
@@ -83,10 +138,14 @@ export default function App() {
     setLanguage((current) => (current === 'en' ? 'zh' : 'en'));
   };
 
+  const toggleTheme = () => {
+    setThemeMode((current) => (current === 'light' ? 'dark' : 'light'));
+  };
+
   const t = (key, variables) => translate(language, key, variables);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t, themeMode, toggleTheme }}>
       <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
         <ThemeProvider theme={theme}>
           <CssBaseline />

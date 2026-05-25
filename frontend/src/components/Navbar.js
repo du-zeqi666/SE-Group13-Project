@@ -11,11 +11,13 @@ import {
 } from '@mui/material';
 import ScatterPlotIcon from '@mui/icons-material/ScatterPlot';
 import LogoutIcon from '@mui/icons-material/Logout';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useAuth, useI18n } from '../App';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const { t, toggleLanguage } = useI18n();
+  const { t, toggleLanguage, themeMode, toggleTheme } = useI18n();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -55,6 +57,11 @@ export default function Navbar() {
         <Button color="inherit" onClick={toggleLanguage} sx={{ mr: 1 }}>
           {t('nav.switchLanguage')}
         </Button>
+        <Tooltip title={t(themeMode === 'light' ? 'nav.darkMode' : 'nav.lightMode')}>
+          <IconButton color="inherit" onClick={toggleTheme} sx={{ mr: 1 }}>
+            {themeMode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+          </IconButton>
+        </Tooltip>
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2">{user.username} ({t(user.role === 'admin' ? 'nav.roleAdmin' : 'nav.roleUser')})</Typography>

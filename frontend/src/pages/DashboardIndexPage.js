@@ -10,7 +10,7 @@ export default function DashboardIndexPage() {
   const { datasets, indices, refresh } = useDashboardData();
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <Navbar />
       <Container maxWidth="xl" sx={{ py: 3 }}>
         <Typography variant="h4" gutterBottom>
