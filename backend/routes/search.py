@@ -17,6 +17,7 @@ from services.ann_service import (
     load_annoy_index,
     normalize_vectors,
 )
+from services.visualization_service import build_visualization_payload
 
 search_bp = Blueprint("search", __name__, url_prefix="/api/search")
 
@@ -160,8 +161,8 @@ def query():
     if metric and metric != index_meta.metric:
         return jsonify({"error": f"Index metric is '{index_meta.metric}'. Please use the same metric for search."}), 400
 
-    _, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id)
-    if cell_names is None:
+    array, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id)
+    if array is None:
         return jsonify({"error": "Dataset data not found"}), 404
 
     try:
@@ -204,6 +205,13 @@ def query():
         "k": k,
         "metric": metric or index_meta.metric,
         "filters": filters,
+        "visualization": build_visualization_payload(
+            index_meta.id,
+            array,
+            cell_names,
+            cell_metadata,
+            query_vector=query_vector,
+        ),
     })
 
 
@@ -290,6 +298,18 @@ def query_by_id():
         "metric": index_meta.metric,
         "query_cell": cell_names[idx] if idx < len(cell_names) else str(idx),
         "filters": filters,
+        "visualization": build_visualization_payload(
+            index_meta.id,
+            array,
+            cell_names,
+            cell_metadata,
+            query_vector=query_vector,
+            query_cell={
+                "cell_id": idx,
+                "cell_name": cell_names[idx] if idx < len(cell_names) else str(idx),
+                **_cell_info(cell_names, cell_metadata, idx),
+            },
+        ),
     })
 
 

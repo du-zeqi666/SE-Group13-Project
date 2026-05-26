@@ -43,6 +43,7 @@ class Config:
     STORAGE_PATH = os.path.join(os.path.dirname(__file__), "storage")
     UPLOAD_FOLDER = os.path.join(STORAGE_PATH, "uploads")
     INDEX_FOLDER = os.environ.get("INDEX_FOLDER") or _default_index_folder()
+    VISUALIZATION_FOLDER = os.path.join(STORAGE_PATH, "visualizations")
     CHROMA_PATH = os.path.abspath(os.path.join(STORAGE_PATH, "chromadb"))
     DATA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 

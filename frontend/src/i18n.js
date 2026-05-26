@@ -156,6 +156,11 @@ const translations = {
       csvHeader: 'Rank,Cell ID,Cell Name,Distance\n',
       tabVectorSearch: 'Vector Search',
       tabAISearch: 'AI Search',
+      embeddingPlotTitle: 'Cell Embedding View',
+      embeddingPlotHint: 'Points in the same color belong to the same cluster. The red marker shows your query position.',
+      queryPoint: 'Query Point',
+      cluster: 'Cluster',
+      clusterCount: 'Clusters',
     },
     profile: {
       title: 'Profile Settings',
@@ -418,6 +423,11 @@ const translations = {
       csvHeader: '排名,细胞ID,细胞名称,距离\n',
       tabVectorSearch: '向量检索',
       tabAISearch: 'AI 智能检索',
+      embeddingPlotTitle: '细胞二维分布图',
+      embeddingPlotHint: '同种颜色表示同一聚类，红色标记表示你的查询位置。',
+      queryPoint: '查询点',
+      cluster: '聚类',
+      clusterCount: '聚类数',
     },
     profile: {
       title: '个人信息设置',

@@ -25,6 +25,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useI18n } from '../App';
+import CellScatterPlot from './CellScatterPlot';
 
 export default function ResultsDisplay({ results }) {
   const { t } = useI18n();
@@ -167,6 +168,10 @@ export default function ResultsDisplay({ results }) {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {results.visualization && (
+        <CellScatterPlot visualization={results.visualization} />
+      )}
     </Box>
   );
 }
