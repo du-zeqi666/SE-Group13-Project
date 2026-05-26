@@ -4,6 +4,8 @@ Course project for Group 13 of the 2025-2026 Spring Software Engineering course 
 
 Chinese version: [README.zh-CN.md](README.zh-CN.md)
 
+Environment issues and fixes: [docs/环境问题.md](docs/%E7%8E%AF%E5%A2%83%E9%97%AE%E9%A2%98.md)
+
 ---
 
 ## ANN Search - Single-Cell Data Analysis

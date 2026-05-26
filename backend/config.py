@@ -5,6 +5,22 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 
+def _is_ascii_path(path):
+    try:
+        path.encode("ascii")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def _default_index_folder():
+    repo_index_dir = os.path.join(os.path.dirname(__file__), "storage", "indices")
+    if _is_ascii_path(repo_index_dir):
+        return repo_index_dir
+
+    return r"D:\Users\Public\SE-Group13-Project\backend-storage\indices"
+
+
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "jwt-secret-key-change-in-production")
@@ -26,7 +42,7 @@ class Config:
 
     STORAGE_PATH = os.path.join(os.path.dirname(__file__), "storage")
     UPLOAD_FOLDER = os.path.join(STORAGE_PATH, "uploads")
-    INDEX_FOLDER = os.path.join(STORAGE_PATH, "indices")
+    INDEX_FOLDER = os.environ.get("INDEX_FOLDER") or _default_index_folder()
     CHROMA_PATH = os.path.abspath(os.path.join(STORAGE_PATH, "chromadb"))
     DATA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 

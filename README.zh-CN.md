@@ -4,6 +4,8 @@
 
 English version: [README.md](README.md)
 
+环境问题与解决办法：[docs/环境问题.md](docs/%E7%8E%AF%E5%A2%83%E9%97%AE%E9%A2%98.md)
+
 ---
 
 ## ANN Search - 单细胞数据分析
