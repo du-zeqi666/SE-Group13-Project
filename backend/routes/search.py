@@ -157,6 +157,8 @@ def query():
     index_meta = SearchIndex.query.filter_by(id=index_id, owner_id=user_id).first()
     if not index_meta:
         return jsonify({"error": "Index not found"}), 404
+    if metric and metric != index_meta.metric:
+        return jsonify({"error": f"Index metric is '{index_meta.metric}'. Please use the same metric for search."}), 400
 
     _, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id)
     if cell_names is None:
@@ -214,6 +216,7 @@ def query_by_id():
     index_id = body.get("index_id")
     cell_id = body.get("cell_id")
     k = int(body.get("k", 10))
+    metric = body.get("metric")
     filters = _extract_filters(body)
 
     if not index_id:
@@ -224,6 +227,8 @@ def query_by_id():
     index_meta = SearchIndex.query.filter_by(id=index_id, owner_id=user_id).first()
     if not index_meta:
         return jsonify({"error": "Index not found"}), 404
+    if metric and metric != index_meta.metric:
+        return jsonify({"error": f"Index metric is '{index_meta.metric}'. Please use the same metric for search."}), 400
 
     array, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id)
     if array is None:
