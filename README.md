@@ -20,6 +20,8 @@ This project is a full-stack web application for Approximate Nearest Neighbor se
 - CSV, TSV, HDF5, and H5AD dataset upload, plus one-click demo dataset generation
 - Dataset preprocessing with L2 normalization or per-feature standardization
 - FAISS Flat, FAISS IVF, and Annoy index construction
+- Multi-dataset joint index construction with ChromaDB HNSW for cross-dataset retrieval
+- RAG-powered natural language AI search with automatic metadata extraction and result interpretation
 - Search by raw vector or by cell ID, with configurable k, distance metric, and metadata filters
 - Ranked results, chart visualization, CSV export, and recent search history
 - Chinese and English frontend interface switching
@@ -32,7 +34,7 @@ This project is a full-stack web application for Approximate Nearest Neighbor se
 | Layer | Technologies |
 | --- | --- |
 | Backend | Python 3.9+, Flask 2.3, Flask-CORS, Flask-JWT-Extended, Flask-SQLAlchemy, PyMySQL |
-| ANN / Data | FAISS-CPU, Annoy, NumPy, Pandas, h5py, scikit-learn |
+| ANN / Data | FAISS-CPU, Annoy, ChromaDB, NumPy, Pandas, h5py, scikit-learn, sentence-transformers |
 | Frontend | React 18, React Router 6, Material UI 5, Axios, Recharts |
 | Storage | MySQL metadata + local dataset files + local ANN index files |
 
@@ -214,10 +216,11 @@ The start script checks ports 3000 and 5000 to avoid duplicate startup. The stop
 3. Go to Dashboard and upload a dataset, or generate demo data.
 4. Optionally preprocess the dataset.
 5. Build a FAISS or Annoy index for the dataset.
-6. Open the Search page and search by vector or cell ID.
-7. Review ranked results, charts, CSV export, and recent search history.
-8. Use the Profile page to manage your own account.
-9. If you are an administrator, use the User Management page to manage regular users.
+6. Optionally build a joint index combining multiple datasets (supports cross-dataset RAG search).
+7. Open the Search page and search by vector, cell ID, or natural language (AI search).
+8. Review ranked results, charts, AI analysis, CSV export, and recent search history.
+9. Use the Profile page to manage your own account.
+10. If you are an administrator, use the User Management page to manage regular users.
 
 ---
 
@@ -229,9 +232,11 @@ All endpoints are prefixed with `/api`.
 - Users: `PATCH /api/users/me`, `PATCH /api/users/me/password`, `GET /api/users`, `POST /api/users`, `PATCH /api/users/<id>`, `PATCH /api/users/<id>/password`, `DELETE /api/users/<id>`
 - Data: `POST /api/data/upload`, `POST /api/data/generate_demo`, `GET /api/data/datasets`, `DELETE /api/data/datasets/<id>`, `POST /api/data/datasets/<id>/preprocess`
 - Index: `POST /api/index/build`, `GET /api/index/list`, `GET /api/index/<id>`, `DELETE /api/index/<id>`
+- Joint Index: `POST /api/joint/build`, `GET /api/joint/list`, `GET /api/joint/<id>`, `DELETE /api/joint/<id>`, `POST /api/joint/query`, `GET /api/joint/<id>/datasets`
+- RAG: `POST /api/rag/search`, `POST /api/rag/analyze`
 - Search: `POST /api/search/query`, `POST /api/search/query_by_id`, `GET /api/search/history`
 
-`POST /api/search/query` and `POST /api/search/query_by_id` also accept an optional `filters` object with `cell_type`, `disease`, `AgeGroup`, and `donor_id` for conditional retrieval.
+`POST /api/search/query` and `POST /api/search/query_by_id` also accept an optional `filters` object with `cell_type`, `disease`, `AgeGroup`, and `donor_id` for conditional retrieval. RAG search accepts natural language queries and returns AI-powered analysis of the results.
 
 ---
 
@@ -251,11 +256,15 @@ All endpoints are prefixed with `/api`.
 │   │   ├── auth.py
 │   │   ├── data.py
 │   │   ├── index.py
+│   │   ├── joint.py
+│   │   ├── rag.py
 │   │   ├── search.py
 │   │   └── users.py
 │   ├── services/
 │   │   ├── ann_service.py
-│   │   └── data_service.py
+│   │   ├── chroma_service.py
+│   │   ├── data_service.py
+│   │   └── rag_service.py
 │   └── storage/
 ├── frontend/
 │   ├── .env.local.example
@@ -265,10 +274,22 @@ All endpoints are prefixed with `/api`.
 │       ├── App.js
 │       ├── api/client.js
 │       ├── components/
+│       │   ├── AISearchPanel.js
+│       │   ├── AIResultsDisplay.js
+│       │   ├── DataManagement.js
+│       │   ├── IndexManagement.js
+│       │   ├── JointIndexManagement.js
+│       │   ├── Login.js
+│       │   ├── Navbar.js
+│       │   ├── Register.js
+│       │   ├── ResultsDisplay.js
+│       │   └── SearchPanel.js
 │       ├── i18n.js
 │       └── pages/
 │           ├── AdminUsersPage.js
 │           ├── AuthPage.js
+│           ├── DashboardDataPage.js
+│           ├── DashboardIndexPage.js
 │           ├── DashboardPage.js
 │           ├── ProfilePage.js
 │           └── SearchPage.js

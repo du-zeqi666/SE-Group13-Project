@@ -20,6 +20,8 @@ English version: [README.md](README.md)
 - 支持 CSV、TSV、HDF5、H5AD 数据集上传，并可一键生成演示数据
 - 支持 L2 归一化和按特征标准化的数据预处理
 - 支持构建 FAISS Flat、FAISS IVF 和 Annoy 索引
+- 基于 ChromaDB HNSW 的多数据集联合索引构建，支持跨数据集检索
+- 基于 RAG 的自然语言 AI 智能检索，自动提取元数据条件并返回分析解读
 - 支持按原始向量或按细胞 ID 检索，并可配置 k 值、距离度量和元数据过滤条件
 - 支持结果排序展示、图表展示、CSV 导出和最近搜索历史
 - 前端支持中英文界面切换
@@ -32,7 +34,7 @@ English version: [README.md](README.md)
 | 层级 | 技术 |
 | --- | --- |
 | 后端 | Python 3.9+、Flask 2.3、Flask-CORS、Flask-JWT-Extended、Flask-SQLAlchemy、PyMySQL |
-| ANN / 数据处理 | FAISS-CPU、Annoy、NumPy、Pandas、h5py、scikit-learn |
+| ANN / 数据处理 | FAISS-CPU、Annoy、ChromaDB、NumPy、Pandas、h5py、scikit-learn、sentence-transformers |
 | 前端 | React 18、React Router 6、Material UI 5、Axios、Recharts |
 | 存储 | MySQL 元数据 + 本地数据文件 + 本地 ANN 索引文件 |
 
@@ -214,10 +216,11 @@ npm start
 3. 进入 Dashboard 上传数据集，或者直接生成演示数据。
 4. 根据需要对数据集做预处理。
 5. 为数据集构建 FAISS 或 Annoy 索引。
-6. 在 Search 页面中按向量或按细胞 ID 发起检索。
-7. 查看排序结果、图表、CSV 导出和最近搜索历史。
-8. 在 Profile 页面维护自己的账户信息。
-9. 如果是管理员，可在 User Management 页面管理普通用户。
+6. 可选：构建联合索引，合并多个数据集（支持跨数据集 RAG 检索）。
+7. 在 Search 页面中按向量、按细胞 ID 或自然语言（AI 智能检索）发起检索。
+8. 查看排序结果、图表、AI 分析、CSV 导出和最近搜索历史。
+9. 在 Profile 页面维护自己的账户信息。
+10. 如果是管理员，可在 User Management 页面管理普通用户。
 
 ---
 
@@ -229,9 +232,11 @@ npm start
 - 用户：`PATCH /api/users/me`、`PATCH /api/users/me/password`、`GET /api/users`、`POST /api/users`、`PATCH /api/users/<id>`、`PATCH /api/users/<id>/password`、`DELETE /api/users/<id>`
 - 数据：`POST /api/data/upload`、`POST /api/data/generate_demo`、`GET /api/data/datasets`、`DELETE /api/data/datasets/<id>`、`POST /api/data/datasets/<id>/preprocess`
 - 索引：`POST /api/index/build`、`GET /api/index/list`、`GET /api/index/<id>`、`DELETE /api/index/<id>`
+- 联合索引：`POST /api/joint/build`、`GET /api/joint/list`、`GET /api/joint/<id>`、`DELETE /api/joint/<id>`、`POST /api/joint/query`、`GET /api/joint/<id>/datasets`
+- RAG：`POST /api/rag/search`、`POST /api/rag/analyze`
 - 搜索：`POST /api/search/query`、`POST /api/search/query_by_id`、`GET /api/search/history`
 
-`POST /api/search/query` 和 `POST /api/search/query_by_id` 额外支持可选的 `filters` 对象，可按 `cell_type`、`disease`、`AgeGroup`、`donor_id` 做条件检索。
+`POST /api/search/query` 和 `POST /api/search/query_by_id` 额外支持可选的 `filters` 对象，可按 `cell_type`、`disease`、`AgeGroup`、`donor_id` 做条件检索。RAG 搜索接受自然语言查询，并返回 AI 分析解读结果。
 
 ---
 
@@ -251,11 +256,15 @@ npm start
 │   │   ├── auth.py
 │   │   ├── data.py
 │   │   ├── index.py
+│   │   ├── joint.py
+│   │   ├── rag.py
 │   │   ├── search.py
 │   │   └── users.py
 │   ├── services/
 │   │   ├── ann_service.py
-│   │   └── data_service.py
+│   │   ├── chroma_service.py
+│   │   ├── data_service.py
+│   │   └── rag_service.py
 │   └── storage/
 ├── frontend/
 │   ├── .env.local.example
@@ -265,10 +274,22 @@ npm start
 │       ├── App.js
 │       ├── api/client.js
 │       ├── components/
+│       │   ├── AISearchPanel.js
+│       │   ├── AIResultsDisplay.js
+│       │   ├── DataManagement.js
+│       │   ├── IndexManagement.js
+│       │   ├── JointIndexManagement.js
+│       │   ├── Login.js
+│       │   ├── Navbar.js
+│       │   ├── Register.js
+│       │   ├── ResultsDisplay.js
+│       │   └── SearchPanel.js
 │       ├── i18n.js
 │       └── pages/
 │           ├── AdminUsersPage.js
 │           ├── AuthPage.js
+│           ├── DashboardDataPage.js
+│           ├── DashboardIndexPage.js
 │           ├── DashboardPage.js
 │           ├── ProfilePage.js
 │           └── SearchPage.js
