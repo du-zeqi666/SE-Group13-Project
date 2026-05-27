@@ -15,7 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { searchByVector, searchById } from '../api/client';
+import { searchByVector, searchById, getIndex } from '../api/client';
 import { useI18n } from '../App';
 
 export default function SearchPanel({ indices, onResults }) {
@@ -26,6 +26,8 @@ export default function SearchPanel({ indices, onResults }) {
   const [cellId, setCellId] = useState('');
   const [k, setK] = useState(10);
   const [metric, setMetric] = useState('l2');
+  const [indexDetails, setIndexDetails] = useState(null);
+  const [loadingIndexDetails, setLoadingIndexDetails] = useState(false);
   const [filters, setFilters] = useState({
     cell_type: '',
     disease: '',
@@ -36,6 +38,14 @@ export default function SearchPanel({ indices, onResults }) {
   const [loading, setLoading] = useState(false);
 
   const selectedIndex = indices.find((i) => i.id === indexId);
+  const filterOptions = indexDetails?.filter_options || {};
+
+  const renderFilterValue = (value) => {
+    if (value) {
+      return value;
+    }
+    return <span style={{ opacity: 0.65 }}>{t('search.allOption')}</span>;
+  };
 
   const activeFilters = Object.fromEntries(
     Object.entries(filters).filter(([, value]) => value.trim())
@@ -46,6 +56,45 @@ export default function SearchPanel({ indices, onResults }) {
       setMetric(selectedIndex.metric);
     }
   }, [selectedIndex?.metric]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadIndexDetails = async () => {
+      if (!indexId) {
+        setIndexDetails(null);
+        return;
+      }
+
+      setLoadingIndexDetails(true);
+      try {
+        const res = await getIndex(indexId);
+        if (!cancelled) {
+          setIndexDetails(res.data);
+          setFilters({
+            cell_type: '',
+            disease: '',
+            AgeGroup: '',
+            donor_id: '',
+          });
+        }
+      } catch (_) {
+        if (!cancelled) {
+          setIndexDetails(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingIndexDetails(false);
+        }
+      }
+    };
+
+    loadIndexDetails();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [indexId]);
 
   const handleSearch = async () => {
     setError('');
@@ -112,12 +161,17 @@ export default function SearchPanel({ indices, onResults }) {
       </FormControl>
 
       {selectedIndex && (
-        <Typography variant="caption" color="text.secondary">
-          {t('search.featuresBuilt', {
-            features: selectedIndex.n_features,
-            date: new Date(selectedIndex.created_at).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US'),
-          })}
-        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">
+            {t('search.featuresBuilt', {
+              features: selectedIndex.n_features,
+              date: new Date(selectedIndex.created_at).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US'),
+            })}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {t('search.vectorDimension', { dimension: indexDetails?.vector_dimension || selectedIndex.n_features })}
+          </Typography>
+        </Box>
       )}
 
       <ToggleButtonGroup
@@ -191,34 +245,54 @@ export default function SearchPanel({ indices, onResults }) {
         </Typography>
       )}
 
+      {loadingIndexDetails && (
+        <Typography variant="caption" color="text.secondary">
+          {t('search.loadingFilterOptions')}
+        </Typography>
+      )}
+
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
         <Typography variant="subtitle2" sx={{ gridColumn: '1 / -1' }}>
           {t('search.conditionFilters')}
         </Typography>
-        <TextField
-          label={t('search.cellType')}
-          size="small"
-          value={filters.cell_type}
-          onChange={(e) => setFilters((prev) => ({ ...prev, cell_type: e.target.value }))}
-        />
-        <TextField
-          label={t('search.disease')}
-          size="small"
-          value={filters.disease}
-          onChange={(e) => setFilters((prev) => ({ ...prev, disease: e.target.value }))}
-        />
-        <TextField
-          label={t('search.ageGroup')}
-          size="small"
-          value={filters.AgeGroup}
-          onChange={(e) => setFilters((prev) => ({ ...prev, AgeGroup: e.target.value }))}
-        />
-        <TextField
-          label={t('search.donorId')}
-          size="small"
-          value={filters.donor_id}
-          onChange={(e) => setFilters((prev) => ({ ...prev, donor_id: e.target.value }))}
-        />
+        {[
+          { key: 'cell_type', label: t('search.cellType') },
+          { key: 'disease', label: t('search.disease') },
+          { key: 'AgeGroup', label: t('search.ageGroup') },
+          { key: 'donor_id', label: t('search.donorId') },
+        ].map(({ key, label }) => {
+          const labelId = `filter-${key}-label`;
+          const selectId = `filter-${key}`;
+          return (
+            <FormControl key={key} size="small" fullWidth variant="outlined">
+              <InputLabel id={labelId} shrink>
+                {label}
+              </InputLabel>
+              <Select
+                id={selectId}
+                labelId={labelId}
+                value={filters[key]}
+                label={label}
+                onChange={(e) => setFilters((prev) => ({ ...prev, [key]: e.target.value }))}
+                displayEmpty
+                renderValue={(selected) => renderFilterValue(selected)}
+              >
+                <MenuItem value="">{t('search.allOption')}</MenuItem>
+                {(filterOptions[key] || []).length === 0 ? (
+                  <MenuItem value="" disabled>
+                    {t('search.noFilterOptions')}
+                  </MenuItem>
+                ) : (
+                  filterOptions[key].map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
+          );
+        })}
       </Box>
 
       <Button

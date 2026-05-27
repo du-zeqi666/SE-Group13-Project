@@ -20,6 +20,7 @@ index_bp = Blueprint("index", __name__, url_prefix="/api/index")
 
 ALLOWED_INDEX_TYPES = {"faiss_flat", "faiss_ivf", "annoy"}
 ALLOWED_METRICS = {"l2", "cosine", "ip"}
+FILTER_FIELDS = ("cell_type", "disease", "AgeGroup", "donor_id")
 
 
 def _load_dataset_array(dataset_id):
@@ -33,6 +34,27 @@ def _load_dataset_array(dataset_id):
     with open(meta_path, "r") as f:
         meta = json.load(f)
     return array, meta["cell_names"], meta["feature_names"], meta.get("cell_metadata", [{} for _ in range(array.shape[0])])
+
+
+def _build_filter_options(cell_metadata, max_options=50):
+    filter_options = {}
+    for field in FILTER_FIELDS:
+        values = []
+        seen = set()
+        for item in cell_metadata or []:
+            if not isinstance(item, dict):
+                continue
+            value = item.get(field)
+            if value is None:
+                continue
+            value = str(value).strip()
+            if not value or value in seen:
+                continue
+            seen.add(value)
+            values.append(value)
+        values.sort(key=str.lower)
+        filter_options[field] = values[:max_options]
+    return filter_options
 
 
 @index_bp.route("/build", methods=["POST"])
@@ -123,7 +145,14 @@ def get_index(index_id):
     idx = SearchIndex.query.filter_by(id=index_id, owner_id=user_id).first()
     if not idx:
         return jsonify({"error": "Index not found"}), 404
-    return jsonify(idx.to_dict())
+
+    _, _, _, cell_metadata = _load_dataset_array(idx.dataset_id)
+    filter_options = _build_filter_options(cell_metadata)
+
+    payload = idx.to_dict()
+    payload["vector_dimension"] = idx.n_features
+    payload["filter_options"] = filter_options
+    return jsonify(payload)
 
 
 @index_bp.route("/<index_id>", methods=["DELETE"])
