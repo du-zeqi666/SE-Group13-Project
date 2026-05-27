@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Chip, Paper, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
   CartesianGrid,
