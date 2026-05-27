@@ -50,6 +50,8 @@ export const deleteDataset = (id) => client.delete(`/api/data/datasets/${id}`);
 export const preprocessDataset = (id, method) =>
   client.post(`/api/data/datasets/${id}/preprocess`, { method });
 
+export const getDatasetScatter = (id, params = {}) => client.get(`/api/data/datasets/${id}/scatter`, { params });
+
 // Index
 export const buildIndex = (payload) => client.post('/api/index/build', payload);
 

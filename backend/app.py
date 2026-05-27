@@ -56,6 +56,7 @@ def create_app():
         Config.STORAGE_PATH,
         Config.UPLOAD_FOLDER,
         Config.INDEX_FOLDER,
+        Config.VISUALIZATION_FOLDER,
         Config.CHROMA_PATH,
     ]:
         os.makedirs(path, exist_ok=True)

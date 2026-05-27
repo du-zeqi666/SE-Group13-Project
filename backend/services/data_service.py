@@ -76,6 +76,14 @@ def _load_h5ad(path):
         obsm_group = f["obsm"]
         var_group = f["var"]
 
+        umap_coords = None
+        if "X_umap" in obsm_group:
+            umap_raw = obsm_group["X_umap"]
+            if hasattr(umap_raw, "shape") and len(umap_raw.shape) == 2:
+                umap_coords = umap_raw[:].astype(np.float32)
+            else:
+                umap_coords = _read_matrix(umap_raw)
+
         if "X_pca" in obsm_group:
             array = obsm_group["X_pca"][:].astype(np.float32)
             feature_names = [f"PC{i + 1}" for i in range(array.shape[1])]
@@ -103,6 +111,9 @@ def _load_h5ad(path):
             for field, values in metadata_columns.items():
                 if values and row_index < len(values) and values[row_index] is not None:
                     entry[field] = values[row_index]
+            if umap_coords is not None and row_index < umap_coords.shape[0] and umap_coords.shape[1] >= 2:
+                entry["umap_1"] = float(umap_coords[row_index, 0])
+                entry["umap_2"] = float(umap_coords[row_index, 1])
             cell_metadata.append(entry)
 
     return array, cell_names, feature_names, cell_metadata
@@ -162,6 +173,37 @@ def load_h5(path):
                 raise ValueError("No 2D dataset found in HDF5 file")
 
     return array, cell_names, feature_names, _empty_cell_metadata(array.shape[0])
+
+
+def load_h5ad_umap(path):
+    """Load precomputed UMAP coords from h5ad obsm/X_umap if available.
+    Returns np.ndarray (n_cells, 2) or None.
+    """
+    import h5py
+
+    with h5py.File(path, "r") as f:
+        if not all(key in f for key in ("obs", "obsm")):
+            return None
+        obsm_group = f["obsm"]
+        if "X_umap" not in obsm_group:
+            return None
+
+        obj = obsm_group["X_umap"]
+        if hasattr(obj, "shape") and len(obj.shape) == 2:
+            coords = obj[:].astype(np.float32)
+        else:
+            coords = _read_matrix(obj)
+
+        if coords.ndim != 2 or coords.shape[0] == 0:
+            return None
+        if coords.shape[1] == 1:
+            coords = np.column_stack([coords[:, 0], np.zeros(coords.shape[0], dtype=np.float32)]).astype(np.float32)
+        elif coords.shape[1] > 2:
+            coords = coords[:, :2].astype(np.float32)
+        else:
+            coords = coords.astype(np.float32)
+
+        return coords
 
 
 def validate_data(array):

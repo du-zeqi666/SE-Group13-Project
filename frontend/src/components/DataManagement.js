@@ -24,6 +24,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Collapse,
+  Skeleton,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -31,7 +33,11 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { uploadDataset, deleteDataset, preprocessDataset, generateDemo, importLocalDataset, listLocalDatasetFiles } from '../api/client';
+import ScatterPlotIcon from '@mui/icons-material/ScatterPlot';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { uploadDataset, deleteDataset, preprocessDataset, generateDemo, importLocalDataset, listLocalDatasetFiles, getDatasetScatter } from '../api/client';
+import CellScatterPlot from './CellScatterPlot';
 import { useI18n } from '../App';
 
 export default function DataManagement({ datasets, onRefresh }) {
@@ -45,6 +51,7 @@ export default function DataManagement({ datasets, onRefresh }) {
   const [dragging, setDragging] = useState(false);
   const [localImport, setLocalImport] = useState({ path: 'liver.h5ad', name: '' });
   const [localFiles, setLocalFiles] = useState([]);
+  const [scatterState, setScatterState] = useState({});
 
   const handleFile = useCallback(
     async (file) => {
@@ -92,6 +99,76 @@ export default function DataManagement({ datasets, onRefresh }) {
     } catch (err) {
       setError(err.response?.data?.error || t('data.deleteFailed'));
     }
+  };
+
+  const loadScatter = async (dataset, forceReload = false) => {
+    const current = scatterState[dataset.id];
+    if (!forceReload && current?.data) {
+      setScatterState((currentState) => ({
+        ...currentState,
+        [dataset.id]: {
+          ...currentState[dataset.id],
+          open: true,
+          error: '',
+        },
+      }));
+      return;
+    }
+
+    setScatterState((currentState) => ({
+      ...currentState,
+      [dataset.id]: {
+        ...currentState[dataset.id],
+        open: true,
+        loading: true,
+        error: '',
+      },
+    }));
+
+    try {
+      // default to UMAP for visualization (server-side precompute + cache)
+      const res = await getDatasetScatter(dataset.id, { method: 'umap' });
+      setScatterState((currentState) => ({
+        ...currentState,
+        [dataset.id]: {
+          open: true,
+          loading: false,
+          error: '',
+          data: res.data,
+          colorBy: null,
+        },
+      }));
+    } catch (err) {
+      setScatterState((currentState) => ({
+        ...currentState,
+        [dataset.id]: {
+          open: true,
+          loading: false,
+          error: err.response?.data?.detail
+            ? `${err.response?.data?.error || t('data.scatterFailed')}: ${err.response.data.detail}`
+            : (err.response?.data?.error || t('data.scatterFailed')),
+          data: null,
+          colorBy: null,
+        },
+      }));
+    }
+  };
+
+  const toggleScatter = (dataset) => {
+    const current = scatterState[dataset.id];
+    if (current?.open) {
+      setScatterState((currentState) => ({
+        ...currentState,
+        [dataset.id]: {
+          ...currentState[dataset.id],
+          open: false,
+          error: '',
+        },
+      }));
+      return;
+    }
+
+    loadScatter(dataset, false);
   };
 
   const handlePreprocess = async () => {
@@ -299,38 +376,130 @@ export default function DataManagement({ datasets, onRefresh }) {
                 </TableCell>
               </TableRow>
             ) : (
-              datasets.map((ds) => (
-                <TableRow key={ds.id}>
-                  <TableCell>{ds.name}</TableCell>
-                  <TableCell align="right">{ds.cell_count?.toLocaleString()}</TableCell>
-                  <TableCell align="right">{ds.feature_count?.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Chip label={localizeStatus(ds.status)} color={statusColor(ds.status)} size="small" />
-                  </TableCell>
-                  <TableCell>{new Date(ds.created_at).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}</TableCell>
-                  <TableCell align="center">
-                    <Tooltip title={t('data.preprocess')}>
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          setPreprocessDialog({ open: true, datasetId: ds.id })
-                        }
-                      >
-                        <TuneIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t('dashboard.delete')}>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDelete(ds.id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))
+              datasets.map((ds) => {
+                const scatter = scatterState[ds.id] || {};
+                return (
+                  <React.Fragment key={ds.id}>
+                    <TableRow>
+                      <TableCell>{ds.name}</TableCell>
+                      <TableCell align="right">{ds.cell_count?.toLocaleString()}</TableCell>
+                      <TableCell align="right">{ds.feature_count?.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Chip label={localizeStatus(ds.status)} color={statusColor(ds.status)} size="small" />
+                      </TableCell>
+                      <TableCell>{new Date(ds.created_at).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}</TableCell>
+                      <TableCell align="center">
+                        <Tooltip title={t('data.preprocess')}>
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              setPreprocessDialog({ open: true, datasetId: ds.id })
+                            }
+                          >
+                            <TuneIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={t('data.scatterPlot')}>
+                          <IconButton
+                            size="small"
+                            onClick={() => toggleScatter(ds)}
+                            color={scatter.open ? 'primary' : 'default'}
+                          >
+                            {scatter.open ? <ExpandLessIcon fontSize="small" /> : <ScatterPlotIcon fontSize="small" />}
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={t('dashboard.delete')}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDelete(ds.id)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={6} sx={{ py: 0, borderBottom: scatter.open ? undefined : 'none' }}>
+                        <Collapse in={Boolean(scatter.open)} timeout="auto" unmountOnExit>
+                          <Box sx={{ py: 2, px: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                              <Box>
+                                <Typography variant="subtitle2">{t('data.scatterPlotTitle')}</Typography>
+                              </Box>
+                              <Button size="small" startIcon={<RefreshIcon />} onClick={() => loadScatter(ds, true)}>
+                                {t('data.refreshScatter')}
+                              </Button>
+                            </Box>
+
+                            {scatter.loading && !scatter.data ? (
+                              <Skeleton variant="rectangular" height={360} />
+                            ) : scatter.error ? (
+                              <Alert severity="error">{scatter.error}</Alert>
+                            ) : scatter.data ? (
+                              <>
+                                <Box sx={{ display: 'flex', gap: 2, mb: 1, alignItems: 'center' }}>
+                                  {(() => {
+                                    const defaultField = 'cell_type';
+                                    const selectedColorBy = scatter.colorBy || defaultField;
+                                    // compute available fields with more than 1 unique value
+                                    const points = scatter.data?.points || [];
+                                    const candidates = ['cell_type', 'disease', 'AgeGroup'];
+                                    const available = candidates.map((f) => {
+                                      const vals = new Set();
+                                      for (let i = 0; i < points.length; i++) {
+                                        const v = points[i] ? points[i][f] : undefined;
+                                        if (v !== undefined) vals.add(String(v));
+                                        if (vals.size > 1) break;
+                                      }
+                                      return { field: f, multi: vals.size > 1 };
+                                    });
+
+                                    // if current selection is not multi-valued, fallback to default
+                                    const effective = available.find((a) => a.field === selectedColorBy && a.multi) ? selectedColorBy : defaultField;
+
+                                    return (
+                                      <FormControl size="small">
+                                        <InputLabel>{t('data.colorBy') || 'Color by'}</InputLabel>
+                                        <Select
+                                          value={effective}
+                                          label={t('data.colorBy') || 'Color by'}
+                                          onChange={(e) => setScatterState((currentState) => ({
+                                            ...currentState,
+                                            [ds.id]: {
+                                              ...(currentState[ds.id] || {}),
+                                              colorBy: e.target.value,
+                                            },
+                                          }))}
+                                        >
+                                          {available.map((a) => (
+                                            a.multi ? (
+                                              <MenuItem key={a.field} value={a.field}>{a.field}</MenuItem>
+                                            ) : (
+                                              <MenuItem key={a.field} value={a.field} disabled>
+                                                {a.field} ({t('data.singleValue') || 'single value'})
+                                              </MenuItem>
+                                            )
+                                          ))}
+                                        </Select>
+                                      </FormControl>
+                                    );
+                                  })()}
+                                </Box>
+                                <CellScatterPlot
+                                  key={`${ds.id}-${scatter.colorBy || 'cell_type'}`}
+                                  visualization={scatter.data}
+                                  colorBy={scatter.colorBy || 'cell_type'}
+                                />
+                              </>
+                            ) : null}
+                          </Box>
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  </React.Fragment>
+                );
+              })
             )}
           </TableBody>
         </Table>
