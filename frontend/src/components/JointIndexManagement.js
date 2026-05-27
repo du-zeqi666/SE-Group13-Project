@@ -76,6 +76,9 @@ export default function JointIndexManagement({ datasets, jointIndices, onRefresh
         <Typography variant="h6" gutterBottom>
           {t('jointIndex.buildTitle')}
         </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          {t('jointIndex.typeNote')}
+        </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 

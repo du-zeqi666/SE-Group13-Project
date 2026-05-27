@@ -67,6 +67,7 @@ export const searchByVector = (payload) => client.post('/api/search/query', payl
 export const searchById = (payload) => client.post('/api/search/query_by_id', payload);
 
 export const getHistory = () => client.get('/api/search/history');
+export const deleteHistory = (payload) => client.delete('/api/search/history', { data: payload });
 
 // Joint Index
 export const buildJointIndex = (payload) => client.post('/api/joint/build', payload);

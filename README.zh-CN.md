@@ -25,7 +25,7 @@ English version: [README.md](README.md)
 - 基于 ChromaDB HNSW 的多数据集联合索引构建，支持跨数据集检索
 - 基于 RAG 的自然语言 AI 智能检索，自动提取元数据条件并返回分析解读
 - 支持按原始向量或按细胞 ID 检索，并可配置 k 值、距离度量和元数据过滤条件
-- 支持结果排序展示、图表展示、CSV 导出和最近搜索历史
+- 支持结果排序展示、图表展示、CSV 导出和最近搜索历史，并支持单条删除、批量删除和清空历史
 - 前端支持中英文界面切换
 - 补充了开发文档、用户手册和测试报告
 
@@ -88,6 +88,8 @@ ADMIN_PASSWORD=change-this-password
 ```
 
 每个字段的详细说明见 [backend/.env.example](backend/.env.example)。如果管理员相关字段留空，系统不会自动创建管理员账号。
+
+后端还支持一些可选的环境变量覆盖，具体见 [backend/.env.example](backend/.env.example)，包括 `DATABASE_URL`、`INDEX_FOLDER`、`VISUALIZATION_MAX_POINTS`、`MAX_CONTENT_LENGTH_MB` 和若干 `RAG_*` 配置。
 
 ### 3. 可选：创建 `frontend/.env.local`
 
@@ -175,7 +177,7 @@ data/
 
 1. 使用 `obsm["X_pca"]` 作为构建 ANN 索引的细胞向量矩阵。
 2. 使用 `obs` 中的 `cell_type`、`disease`、`AgeGroup` 等字段作为返回细胞信息和后续条件检索字段。
-3. 使用 `obsm["X_umap"]` 或 `obsm["X_tsne"]` 做可视化，不建议直接作为主检索向量。
+3. 使用 `obsm["X_umap"]` 或 `obsm["X_tsne"]` 做可视化；当前前端散点图会优先使用 `obsm["X_umap"]`。
 4. 原始 `X` 表达矩阵保留为源数据，需要时再使用，但不建议默认直接用于检索，因为维度更高、开销更大。
 
 说明：当前后端上传链路已经支持通用 CSV/TSV/HDF5 输入，但这份课程 `.h5ad` 数据是结构化的 AnnData 文件，且包含现成降维结果。若要完全贴合课程数据设计，后端加载逻辑应优先读取 `obsm["X_pca"]` 和选定的 `obs` 元数据字段。
@@ -237,6 +239,7 @@ npm start
 - 联合索引：`POST /api/joint/build`、`GET /api/joint/list`、`GET /api/joint/<id>`、`DELETE /api/joint/<id>`、`POST /api/joint/query`、`GET /api/joint/<id>/datasets`
 - RAG：`POST /api/rag/search`、`POST /api/rag/analyze`
 - 搜索：`POST /api/search/query`、`POST /api/search/query_by_id`、`GET /api/search/history`
+- 搜索历史管理：`DELETE /api/search/history`
 
 `POST /api/search/query` 和 `POST /api/search/query_by_id` 额外支持可选的 `filters` 对象，可按 `cell_type`、`disease`、`AgeGroup`、`donor_id` 做条件检索。RAG 搜索接受自然语言查询，并返回 AI 分析解读结果。
 

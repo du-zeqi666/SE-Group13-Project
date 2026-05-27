@@ -25,7 +25,7 @@ This project is a full-stack web application for Approximate Nearest Neighbor se
 - Multi-dataset joint index construction with ChromaDB HNSW for cross-dataset retrieval
 - RAG-powered natural language AI search with automatic metadata extraction and result interpretation
 - Search by raw vector or by cell ID, with configurable k, distance metric, and metadata filters
-- Ranked results, chart visualization, CSV export, and recent search history
+- Ranked results, chart visualization, CSV export, and recent search history with single-item, bulk, and clear-all deletion controls
 - Chinese and English frontend interface switching
 - Delivery documents including development guide, user manual, and test report
 
@@ -88,6 +88,8 @@ ADMIN_PASSWORD=change-this-password
 ```
 
 See [backend/.env.example](backend/.env.example) for field-by-field comments. If the admin-related values are left empty, no administrator account is auto-created.
+
+Optional backend overrides are also documented in [backend/.env.example](backend/.env.example), including `DATABASE_URL`, `INDEX_FOLDER`, `VISUALIZATION_MAX_POINTS`, `MAX_CONTENT_LENGTH_MB`, and the `RAG_*` settings.
 
 ### 3. Optional: create `frontend/.env.local`
 
@@ -175,7 +177,7 @@ Practical mapping for this project:
 
 1. Use `obsm["X_pca"]` as the cell vector matrix for index construction.
 2. Use `obs` metadata such as `cell_type`, `disease`, and `AgeGroup` as returned cell information and future filter fields.
-3. Use `obsm["X_umap"]` or `obsm["X_tsne"]` for visualization only, not as the primary ANN index vectors.
+3. Use `obsm["X_umap"]` or `obsm["X_tsne"]` for visualization only, and the current frontend scatter plot will prefer `obsm["X_umap"]` when available.
 4. Keep the raw `X` matrix as source data when needed, but avoid using it as the default retrieval vector because it is much higher-dimensional and more expensive.
 
 Note: the current backend upload path already supports generic CSV/TSV/HDF5 input, but this specific course `.h5ad` file contains structured AnnData groups and precomputed embeddings. To fully align with the course data design, the loader should preferentially read `obsm["X_pca"]` and selected `obs` fields.
@@ -237,6 +239,7 @@ All endpoints are prefixed with `/api`.
 - Joint Index: `POST /api/joint/build`, `GET /api/joint/list`, `GET /api/joint/<id>`, `DELETE /api/joint/<id>`, `POST /api/joint/query`, `GET /api/joint/<id>/datasets`
 - RAG: `POST /api/rag/search`, `POST /api/rag/analyze`
 - Search: `POST /api/search/query`, `POST /api/search/query_by_id`, `GET /api/search/history`
+- Search history management: `DELETE /api/search/history`
 
 `POST /api/search/query` and `POST /api/search/query_by_id` also accept an optional `filters` object with `cell_type`, `disease`, `AgeGroup`, and `donor_id` for conditional retrieval. RAG search accepts natural language queries and returns AI-powered analysis of the results.
 

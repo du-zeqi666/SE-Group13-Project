@@ -304,3 +304,30 @@ def history():
         .all()
     )
     return jsonify([entry.to_dict() for entry in history_entries])
+
+
+@search_bp.route("/history", methods=["DELETE"])
+@jwt_required()
+def delete_history():
+    """Delete one or more history entries for the current user.
+    Accepts JSON body: { "ids": [<id>, ...] } or { "all": true } to remove all entries for the user.
+    """
+    user_id = get_jwt_identity()
+    body = request.get_json(silent=True) or {}
+
+    if body.get("all"):
+        reason = str(body.get("reason") or "").strip()
+        if not reason:
+            return jsonify({"error": "A confirmation reason is required when clearing all history."}), 400
+        SearchHistory.query.filter_by(user_id=user_id).delete()
+        db.session.commit()
+        return jsonify({"deleted": "all", "reason": reason})
+
+    ids = body.get("ids") or []
+    if not isinstance(ids, list) or not ids:
+        return jsonify({"error": "Provide non-empty 'ids' array or set 'all': true."}), 400
+
+    # Only delete entries that belong to the current user
+    SearchHistory.query.filter(SearchHistory.user_id == user_id, SearchHistory.id.in_(ids)).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({"deleted": len(ids)})

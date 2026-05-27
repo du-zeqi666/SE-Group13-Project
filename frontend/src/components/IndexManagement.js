@@ -17,8 +17,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -96,22 +94,18 @@ export default function IndexManagement({ datasets, indices, onRefresh }) {
             </Select>
           </FormControl>
 
-          <Box>
-            <Typography variant="body2" gutterBottom>
-              {t('dashboard.indexType')}
-            </Typography>
-            <ToggleButtonGroup
+          <FormControl fullWidth size="small">
+            <InputLabel>{t('dashboard.indexType')}</InputLabel>
+            <Select
               value={buildForm.index_type}
-              exclusive
-              size="small"
-              onChange={(_, value) => value && setBuildForm({ ...buildForm, index_type: value })}
-              fullWidth
+              label={t('dashboard.indexType')}
+              onChange={(e) => setBuildForm({ ...buildForm, index_type: e.target.value })}
             >
-              <ToggleButton value="faiss_flat">FAISS Flat</ToggleButton>
-              <ToggleButton value="faiss_ivf">FAISS IVF</ToggleButton>
-              <ToggleButton value="annoy">Annoy</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
+              <MenuItem value="faiss_flat">FAISS Flat</MenuItem>
+              <MenuItem value="faiss_ivf">FAISS IVF</MenuItem>
+              <MenuItem value="annoy">Annoy</MenuItem>
+            </Select>
+          </FormControl>
 
           <FormControl fullWidth size="small">
             <InputLabel>{t('dashboard.metric')}</InputLabel>

@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Container,
   Typography,
   Grid,
@@ -14,6 +19,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Checkbox,
+  IconButton,
+  TextField,
 } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -24,11 +32,17 @@ import Navbar from '../components/Navbar';
 import { useAuth, useI18n } from '../App';
 import useDashboardData from '../hooks/useDashboardData';
 import { Link as RouterLink } from 'react-router-dom';
+import { deleteHistory } from '../api/client';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { t } = useI18n();
-  const { datasets, indices, history } = useDashboardData();
+  const { datasets, indices, history, refresh } = useDashboardData();
+  const [selected, setSelected] = useState([]);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearReason, setClearReason] = useState('');
+  const [clearLoading, setClearLoading] = useState(false);
 
   const quickActions = [
     {
@@ -118,18 +132,20 @@ export default function DashboardPage() {
               <TableContainer>
                 <Table size="small">
                   <TableHead>
-                    <TableRow>
-                      <TableCell>{t('dashboard.type')}</TableCell>
-                      <TableCell>{t('dashboard.metric')}</TableCell>
-                      <TableCell>{t('dashboard.dataset')}</TableCell>
-                      <TableCell align="right">Top-K</TableCell>
-                      <TableCell align="right">{t('search.distance')} / ms</TableCell>
-                    </TableRow>
+                      <TableRow>
+                        <TableCell />
+                        <TableCell>{t('dashboard.type')}</TableCell>
+                        <TableCell>{t('dashboard.metric')}</TableCell>
+                        <TableCell>{t('dashboard.dataset')}</TableCell>
+                        <TableCell align="right">Top-K</TableCell>
+                        <TableCell align="right">{t('search.distance')} / ms</TableCell>
+                        <TableCell align="center">{t('dashboard.actions')}</TableCell>
+                      </TableRow>
                   </TableHead>
                   <TableBody>
                     {history.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ color: 'text.secondary' }}>
+                        <TableCell colSpan={7} align="center" sx={{ color: 'text.secondary' }}>
                           {t('dashboard.noRecentSearches')}
                         </TableCell>
                       </TableRow>
@@ -139,11 +155,35 @@ export default function DashboardPage() {
                         const dataset = datasets.find((entry) => entry.id === index?.dataset_id);
                         return (
                           <TableRow key={item.id}>
+                            <TableCell padding="checkbox">
+                              <Checkbox
+                                size="small"
+                                checked={selected.includes(item.id)}
+                                onChange={() => {
+                                  setSelected((prev) => {
+                                    if (prev.includes(item.id)) return prev.filter((i) => i !== item.id);
+                                    return [...prev, item.id];
+                                  });
+                                }}
+                              />
+                            </TableCell>
                             <TableCell>{item.type}</TableCell>
                             <TableCell>{index?.metric?.toUpperCase() || '-'}</TableCell>
                             <TableCell>{dataset?.name || '-'}</TableCell>
                             <TableCell align="right">{item.k}</TableCell>
                             <TableCell align="right">{item.query_time_ms}</TableCell>
+                            <TableCell align="center">
+                              <IconButton size="small" color="error" onClick={async () => {
+                                if (!window.confirm('Delete this history entry?')) return;
+                                try {
+                                  await deleteHistory({ ids: [item.id] });
+                                  refresh();
+                                  setSelected((prev) => prev.filter((i) => i !== item.id));
+                                } catch (_) {}
+                              }}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
                           </TableRow>
                         );
                       })
@@ -151,10 +191,74 @@ export default function DashboardPage() {
                   </TableBody>
                 </Table>
               </TableContainer>
+              <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  disabled={selected.length === 0}
+                  onClick={async () => {
+                    if (!window.confirm(`Delete ${selected.length} selected history entries?`)) return;
+                    try {
+                      await deleteHistory({ ids: selected });
+                      refresh();
+                      setSelected([]);
+                    } catch (_) {}
+                  }}
+                >
+                  Delete Selected
+                </Button>
+                <Button variant="text" onClick={() => setClearDialogOpen(true)}>
+                  Clear All
+                </Button>
+              </Box>
             </Paper>
           </Grid>
         </Grid>
       </Container>
+
+      <Dialog open={clearDialogOpen} onClose={() => !clearLoading && setClearDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('dashboard.clearHistoryTitle')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            {t('dashboard.clearHistoryDescription')}
+          </DialogContentText>
+          <TextField
+            autoFocus
+            fullWidth
+            size="small"
+            label={t('dashboard.clearHistoryReason')}
+            placeholder={t('dashboard.clearHistoryReasonPlaceholder')}
+            value={clearReason}
+            onChange={(e) => setClearReason(e.target.value)}
+            helperText={t('dashboard.clearHistoryReasonHelp')}
+            disabled={clearLoading}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setClearDialogOpen(false)} disabled={clearLoading}>
+            {t('dashboard.cancel')}
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={clearLoading || !clearReason.trim()}
+            onClick={async () => {
+              setClearLoading(true);
+              try {
+                await deleteHistory({ all: true, reason: clearReason.trim() });
+                refresh();
+                setSelected([]);
+                setClearReason('');
+                setClearDialogOpen(false);
+              } catch (_) {}
+              setClearLoading(false);
+            }}
+          >
+            {t('dashboard.confirmClearHistory')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
