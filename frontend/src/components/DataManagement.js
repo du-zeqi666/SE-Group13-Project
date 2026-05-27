@@ -412,7 +412,7 @@ export default function DataManagement({ datasets, onRefresh }) {
                         />
                       </TableCell>
                       <TableCell>{new Date(ds.created_at).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}</TableCell>
-                      <TableCell align="center">
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
                         <Tooltip title={t('data.preprocess')}>
                           <IconButton
                             size="small"
