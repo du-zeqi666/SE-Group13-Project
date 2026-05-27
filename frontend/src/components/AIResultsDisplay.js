@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Box,
   Chip,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -14,6 +13,8 @@ import {
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import { useI18n } from '../App';
+import GlassCard from './GlassCard';
+import { DataNodes } from './ScienceIllustrations';
 
 function StatBox({ label, value }) {
   return (
@@ -42,7 +43,10 @@ export default function AIResultsDisplay({ results }) {
 
   if (!results) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 300, position: 'relative' }}>
+        <Box sx={{ position: 'relative', width: 180, height: 140, mb: 2, color: 'primary.main' }}>
+          <DataNodes />
+        </Box>
         <Typography color="text.secondary" variant="body1">
           {t('search.runSearchPrompt')}
         </Typography>
@@ -114,7 +118,7 @@ export default function AIResultsDisplay({ results }) {
       </Box>
 
       {analysis && (
-        <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'action.hover' }}>
+        <GlassCard noHover noAccent sx={{ p: 2, mb: 2, bgcolor: 'action.hover' }}>
           <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
             {t('rag.analysisSection')}
           </Typography>
@@ -141,10 +145,10 @@ export default function AIResultsDisplay({ results }) {
               {analysis.interpretation}
             </Typography>
           )}
-        </Paper>
+        </GlassCard>
       )}
 
-      <Paper variant="outlined">
+      <GlassCard noHover noAccent sx={{ p: 0 }}>
         <TableContainer>
           <Table size="small">
             <TableHead>
@@ -179,7 +183,7 @@ export default function AIResultsDisplay({ results }) {
             </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
+      </GlassCard>
     </Box>
   );
 }

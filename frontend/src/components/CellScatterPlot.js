@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Chip, Paper, Typography } from '@mui/material';
+import { Box, Chip, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
   CartesianGrid,
@@ -14,16 +14,17 @@ import {
   ZAxis,
 } from 'recharts';
 import { useI18n } from '../App';
+import GlassCard from './GlassCard';
 
 const CLUSTER_COLORS = [
-  '#1976d2',
-  '#2e7d32',
-  '#ed6c02',
-  '#9c27b0',
-  '#d32f2f',
-  '#0288d1',
-  '#6d4c41',
-  '#7b1fa2',
+  '#5e6ad2',
+  '#3b82f6',
+  '#8b5cf6',
+  '#0eb573',
+  '#f2a33b',
+  '#e5484d',
+  '#6366f1',
+  '#06b6d4',
 ];
 
 function ScatterTooltip({ active, payload }) {
@@ -88,7 +89,7 @@ export default function CellScatterPlot({ visualization, colorBy = 'cell_type' }
   const yMax = Math.max(...yValues);
 
   return (
-    <Paper variant="outlined" sx={{ mt: 1, p: 2 }}>
+    <GlassCard noHover noAccent sx={{ mt: 1, p: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, gap: 1, flexWrap: 'wrap' }}>
         <Box>
           <Typography variant="subtitle1" fontWeight="bold">
@@ -142,6 +143,6 @@ export default function CellScatterPlot({ visualization, colorBy = 'cell_type' }
           </ScatterChart>
         </ResponsiveContainer>
       </Box>
-    </Paper>
+    </GlassCard>
   );
 }

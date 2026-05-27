@@ -39,6 +39,8 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { uploadDataset, deleteDataset, preprocessDataset, generateDemo, importLocalDataset, listLocalDatasetFiles, getDatasetScatter } from '../api/client';
 import CellScatterPlot from './CellScatterPlot';
 import { useI18n } from '../App';
+import GlassCard from './GlassCard';
+import GlowButton from './GlowButton';
 
 export default function DataManagement({ datasets, onRefresh }) {
   const { t, language } = useI18n();
@@ -240,7 +242,10 @@ export default function DataManagement({ datasets, onRefresh }) {
   };
 
   const localizeStatus = (status) => {
-    if (status === 'ready') return t('data.statusReady');
+    if (status?.startsWith('ready')) {
+      if (status.includes('local import')) return t('data.statusReadyLocalImport');
+      return t('data.statusReady');
+    }
     if (status?.startsWith('preprocessed')) {
       return `${t('data.statusPreprocessed')} (${status.replace('preprocessed ', '')})`;
     }
@@ -248,7 +253,7 @@ export default function DataManagement({ datasets, onRefresh }) {
   };
 
   const statusColor = (status) => {
-    if (status === 'ready') return 'success';
+    if (status?.startsWith('ready')) return 'success';
     if (status?.startsWith('preprocessed')) return 'info';
     return 'default';
   };
@@ -309,7 +314,7 @@ export default function DataManagement({ datasets, onRefresh }) {
         </Button>
       </Box>
 
-      <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+      <GlassCard noHover noAccent sx={{ p: 2, mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
           <Typography variant="subtitle2">
             {t('data.localImportTitle')}
@@ -349,14 +354,14 @@ export default function DataManagement({ datasets, onRefresh }) {
             size="small"
             placeholder={t('data.localImportNamePlaceholder')}
           />
-          <Button variant="contained" startIcon={<FolderOpenIcon />} onClick={handleImportLocal} disabled={!localImport.path}>
+          <GlowButton startIcon={<FolderOpenIcon />} onClick={handleImportLocal} disabled={!localImport.path}>
             {t('data.localImportButton')}
-          </Button>
+          </GlowButton>
         </Box>
-      </Paper>
+      </GlassCard>
 
       {/* Dataset table */}
-      <TableContainer component={Paper} variant="outlined">
+      <TableContainer component={GlassCard} noHover noAccent sx={{ p: 0 }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -385,7 +390,26 @@ export default function DataManagement({ datasets, onRefresh }) {
                       <TableCell align="right">{ds.cell_count?.toLocaleString()}</TableCell>
                       <TableCell align="right">{ds.feature_count?.toLocaleString()}</TableCell>
                       <TableCell>
-                        <Chip label={localizeStatus(ds.status)} color={statusColor(ds.status)} size="small" />
+                        <Chip
+                          label={localizeStatus(ds.status)}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            borderColor: (t) => {
+                              const c = statusColor(ds.status);
+                              if (c === 'success') return t.palette.success.main;
+                              if (c === 'info') return t.palette.info.main;
+                              return t.palette.divider;
+                            },
+                            color: (t) => {
+                              const c = statusColor(ds.status);
+                              if (c === 'success') return t.palette.success.main;
+                              if (c === 'info') return t.palette.info.main;
+                              return t.palette.text.secondary;
+                            },
+                            bgcolor: 'transparent',
+                          }}
+                        />
                       </TableCell>
                       <TableCell>{new Date(ds.created_at).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}</TableCell>
                       <TableCell align="center">

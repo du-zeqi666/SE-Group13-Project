@@ -1,10 +1,12 @@
 import React from 'react';
-import { Box, Container, Paper, Typography, Button, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material';
 import Login from '../components/Login';
 import Register from '../components/Register';
 import ScatterPlotIcon from '@mui/icons-material/ScatterPlot';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import GlassCard from '../components/GlassCard';
+import AnimatedBackground from '../components/AnimatedBackground';
 import { useI18n } from '../App';
 
 export default function AuthPage({ mode }) {
@@ -20,8 +22,8 @@ export default function AuthPage({ mode }) {
         bgcolor: 'background.default',
       }}
     >
-      <Container maxWidth="xs">
-        <Paper elevation={3} sx={{ p: 4 }}>
+      <AnimatedBackground />
+      <GlassCard sx={{ width: 380, p: 4, mx: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1, gap: 0.5 }}>
             <Button size="small" onClick={toggleLanguage}>
               {t('auth.switchLanguage')}
@@ -32,7 +34,7 @@ export default function AuthPage({ mode }) {
               </IconButton>
             </Tooltip>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <ScatterPlotIcon color="primary" sx={{ mr: 1, fontSize: 32 }} />
             <Typography variant="h5" color="primary" fontWeight="bold">
               ANN Search
@@ -42,8 +44,7 @@ export default function AuthPage({ mode }) {
             {t('auth.subtitle')}
           </Typography>
           {mode === 'login' ? <Login /> : <Register />}
-        </Paper>
-      </Container>
+        </GlassCard>
     </Box>
   );
 }

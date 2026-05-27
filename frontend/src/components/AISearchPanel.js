@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -16,6 +15,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { listJointIndices, ragSearch } from '../api/client';
 import { useI18n } from '../App';
+import GlowButton from './GlowButton';
 
 export default function AISearchPanel({ onResults }) {
   const { t } = useI18n();
@@ -113,15 +113,14 @@ export default function AISearchPanel({ onResults }) {
         />
       </Box>
 
-      <Button
-        variant="contained"
+      <GlowButton
         startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <SearchIcon />}
         onClick={handleSearch}
         disabled={loading}
         fullWidth
       >
         {loading ? t('rag.searching') : t('rag.search')}
-      </Button>
+      </GlowButton>
     </Box>
   );
 }

@@ -2,16 +2,14 @@ import React, { useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
-  Container,
   Grid,
-  Paper,
   TextField,
   Typography,
 } from '@mui/material';
-import Navbar from '../components/Navbar';
 import { useAuth, useI18n } from '../App';
 import { updateMyPassword, updateMyProfile } from '../api/client';
+import GlassCard from '../components/GlassCard';
+import GlowButton from '../components/GlowButton';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
@@ -76,82 +74,88 @@ export default function ProfilePage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Navbar />
-      <Container maxWidth="lg" sx={{ py: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          {t('profile.title')}
-        </Typography>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                {t('profile.basicInfo')}
-              </Typography>
-              {profileError && <Alert severity="error" sx={{ mb: 2 }}>{profileError}</Alert>}
-              {profileSuccess && <Alert severity="success" sx={{ mb: 2 }}>{profileSuccess}</Alert>}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  label={t('profile.username')}
-                  value={profileForm.username}
-                  onChange={(e) => setProfileForm((current) => ({ ...current, username: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label={t('profile.email')}
-                  value={profileForm.email}
-                  onChange={(e) => setProfileForm((current) => ({ ...current, email: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label={t('profile.role')}
-                  value={user?.role === 'admin' ? t('nav.roleAdmin') : t('nav.roleUser')}
-                  disabled
-                  fullWidth
-                />
-                <Button variant="contained" onClick={handleProfileSave}>
-                  {t('profile.saveProfile')}
-                </Button>
-              </Box>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                {t('profile.changePassword')}
-              </Typography>
-              {passwordError && <Alert severity="error" sx={{ mb: 2 }}>{passwordError}</Alert>}
-              {passwordSuccess && <Alert severity="success" sx={{ mb: 2 }}>{passwordSuccess}</Alert>}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField
-                  label={t('profile.currentPassword')}
-                  type="password"
-                  value={passwordForm.current_password}
-                  onChange={(e) => setPasswordForm((current) => ({ ...current, current_password: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label={t('profile.newPassword')}
-                  type="password"
-                  value={passwordForm.new_password}
-                  onChange={(e) => setPasswordForm((current) => ({ ...current, new_password: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label={t('profile.confirmPassword')}
-                  type="password"
-                  value={passwordForm.confirm_password}
-                  onChange={(e) => setPasswordForm((current) => ({ ...current, confirm_password: e.target.value }))}
-                  fullWidth
-                />
-                <Button variant="contained" color="secondary" onClick={handlePasswordSave}>
-                  {t('profile.savePassword')}
-                </Button>
-              </Box>
-            </Paper>
-          </Grid>
+    <Box sx={{ maxWidth: 860, mx: 'auto' }}>
+      <Typography variant="h4" gutterBottom>
+        {t('profile.title')}
+      </Typography>
+      <Box
+        sx={{
+          width: 60,
+          height: 3,
+          borderRadius: '3px',
+          background: (t2) => t2.palette.custom?.gradientBar || 'linear-gradient(135deg, #0d9488, #2563eb)',
+          mb: 3,
+        }}
+      />
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <GlassCard>
+            <Typography variant="h6" gutterBottom>
+              {t('profile.basicInfo')}
+            </Typography>
+            {profileError && <Alert severity="error" sx={{ mb: 2 }}>{profileError}</Alert>}
+            {profileSuccess && <Alert severity="success" sx={{ mb: 2 }}>{profileSuccess}</Alert>}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label={t('profile.username')}
+                value={profileForm.username}
+                onChange={(e) => setProfileForm((current) => ({ ...current, username: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label={t('profile.email')}
+                value={profileForm.email}
+                onChange={(e) => setProfileForm((current) => ({ ...current, email: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label={t('profile.role')}
+                value={user?.role === 'admin' ? t('nav.roleAdmin') : t('nav.roleUser')}
+                disabled
+                fullWidth
+              />
+              <GlowButton onClick={handleProfileSave}>
+                {t('profile.saveProfile')}
+              </GlowButton>
+            </Box>
+          </GlassCard>
         </Grid>
-      </Container>
+        <Grid item xs={12} md={6}>
+          <GlassCard>
+            <Typography variant="h6" gutterBottom>
+              {t('profile.changePassword')}
+            </Typography>
+            {passwordError && <Alert severity="error" sx={{ mb: 2 }}>{passwordError}</Alert>}
+            {passwordSuccess && <Alert severity="success" sx={{ mb: 2 }}>{passwordSuccess}</Alert>}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label={t('profile.currentPassword')}
+                type="password"
+                value={passwordForm.current_password}
+                onChange={(e) => setPasswordForm((current) => ({ ...current, current_password: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label={t('profile.newPassword')}
+                type="password"
+                value={passwordForm.new_password}
+                onChange={(e) => setPasswordForm((current) => ({ ...current, new_password: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label={t('profile.confirmPassword')}
+                type="password"
+                value={passwordForm.confirm_password}
+                onChange={(e) => setPasswordForm((current) => ({ ...current, confirm_password: e.target.value }))}
+                fullWidth
+              />
+              <GlowButton onClick={handlePasswordSave}>
+                {t('profile.savePassword')}
+              </GlowButton>
+            </Box>
+          </GlassCard>
+        </Grid>
+      </Grid>
     </Box>
   );
 }

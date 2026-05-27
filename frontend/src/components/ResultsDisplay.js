@@ -8,7 +8,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Button,
   Chip,
   Stack,
@@ -25,6 +24,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useI18n } from '../App';
+import GlassCard from './GlassCard';
+import { ScatterField } from './ScienceIllustrations';
 
 export default function ResultsDisplay({ results }) {
   const { t } = useI18n();
@@ -32,7 +33,10 @@ export default function ResultsDisplay({ results }) {
 
   if (!results) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 300 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 300, position: 'relative' }}>
+        <Box sx={{ position: 'relative', width: 180, height: 140, mb: 2, color: 'primary.main' }}>
+          <ScatterField />
+        </Box>
         <Typography color="text.secondary">
           {t('search.runSearchPrompt')}
         </Typography>
@@ -125,13 +129,13 @@ export default function ResultsDisplay({ results }) {
               <XAxis dataKey="name" angle={-45} textAnchor="end" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
-              <Bar dataKey="distance" fill={theme.palette.primary.main} />
+              <Bar dataKey="distance" radius={[4, 4, 0, 0]} fill={theme.palette.primary.main} />
             </BarChart>
           </ResponsiveContainer>
         </Box>
       )}
 
-      <TableContainer component={Paper} variant="outlined">
+      <TableContainer component={GlassCard} noHover noAccent sx={{ p: 0 }}>
         <Table size="small">
           <TableHead>
             <TableRow>

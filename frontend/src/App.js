@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import { createAppTheme } from './theme/theme';
+import GlobalStyles from './theme/GlobalStyles';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import DashboardDataPage from './pages/DashboardDataPage';
@@ -8,63 +10,9 @@ import DashboardIndexPage from './pages/DashboardIndexPage';
 import SearchPage from './pages/SearchPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AppLayout from './components/AppLayout';
 import { getMe } from './api/client';
 import { translate } from './i18n';
-
-const getDesignTokens = (mode) => ({
-  palette: {
-    mode,
-    ...(mode === 'light'
-      ? {
-          primary: { main: '#1976d2' },
-          secondary: { main: '#7c4dff' },
-          background: { default: '#f5f7fa', paper: '#ffffff' },
-        }
-      : {
-          primary: { main: '#90caf9' },
-          secondary: { main: '#b388ff' },
-          background: { default: '#0a1929', paper: '#132f4c' },
-          divider: 'rgba(194,224,255,0.12)',
-        }),
-  },
-  typography: {
-    fontFamily: [
-      '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto',
-      '"Helvetica Neue"', 'Arial', 'sans-serif', '"Microsoft YaHei"',
-    ].join(','),
-  },
-  shape: { borderRadius: 10 },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: { textTransform: 'none', borderRadius: 8, fontWeight: 600 },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: { borderRadius: 12, backgroundImage: 'none' },
-      },
-    },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-          ...(mode === 'dark' && { backgroundColor: '#132f4c' }),
-        },
-      },
-    },
-    MuiOutlinedInput: {
-      styleOverrides: {
-        root: { borderRadius: 8 },
-      },
-    },
-    MuiTableCell: {
-      styleOverrides: {
-        head: { fontWeight: 700 },
-      },
-    },
-  },
-});
 
 export const AuthContext = createContext(null);
 export const LanguageContext = createContext(null);
@@ -96,7 +44,7 @@ export default function App() {
   const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'en');
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('themeMode') || 'light');
 
-  const theme = useMemo(() => createTheme(getDesignTokens(themeMode)), [themeMode]);
+  const theme = useMemo(() => createAppTheme(themeMode), [themeMode]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -149,6 +97,7 @@ export default function App() {
       <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
+          <GlobalStyles />
           <Routes>
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/register" element={<AuthPage mode="register" />} />
@@ -166,7 +115,7 @@ export default function App() {
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <DashboardPage />
+                  <AppLayout><DashboardPage /></AppLayout>
                 </ProtectedRoute>
               }
             />
@@ -174,7 +123,7 @@ export default function App() {
               path="/dashboard/data"
               element={
                 <ProtectedRoute>
-                  <DashboardDataPage />
+                  <AppLayout><DashboardDataPage /></AppLayout>
                 </ProtectedRoute>
               }
             />
@@ -182,7 +131,7 @@ export default function App() {
               path="/dashboard/index"
               element={
                 <ProtectedRoute>
-                  <DashboardIndexPage />
+                  <AppLayout><DashboardIndexPage /></AppLayout>
                 </ProtectedRoute>
               }
             />
@@ -190,7 +139,7 @@ export default function App() {
               path="/search"
               element={
                 <ProtectedRoute>
-                  <SearchPage />
+                  <AppLayout><SearchPage /></AppLayout>
                 </ProtectedRoute>
               }
             />
@@ -198,7 +147,7 @@ export default function App() {
               path="/profile"
               element={
                 <ProtectedRoute>
-                  <ProfilePage />
+                  <AppLayout><ProfilePage /></AppLayout>
                 </ProtectedRoute>
               }
             />
@@ -206,7 +155,7 @@ export default function App() {
               path="/admin/users"
               element={
                 <AdminRoute>
-                  <AdminUsersPage />
+                  <AppLayout><AdminUsersPage /></AppLayout>
                 </AdminRoute>
               }
             />

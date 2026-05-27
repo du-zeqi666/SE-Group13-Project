@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Button,
   TextField,
   Typography,
   FormControl,
@@ -17,6 +16,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { searchByVector, searchById, getIndex } from '../api/client';
 import { useI18n } from '../App';
+import GlowButton from './GlowButton';
 
 export default function SearchPanel({ indices, onResults }) {
   const { t, language } = useI18n();
@@ -295,15 +295,14 @@ export default function SearchPanel({ indices, onResults }) {
         })}
       </Box>
 
-      <Button
-        variant="contained"
+      <GlowButton
         startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <SearchIcon />}
         onClick={handleSearch}
         disabled={loading}
         fullWidth
       >
         {loading ? t('search.searching') : t('search.search')}
-      </Button>
+      </GlowButton>
     </Box>
   );
 }

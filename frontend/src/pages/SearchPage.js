@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Container, Grid, Paper, Tab, Tabs } from '@mui/material';
-import Navbar from '../components/Navbar';
+import { Box, Grid, Tab, Tabs, Typography } from '@mui/material';
 import SearchPanel from '../components/SearchPanel';
 import ResultsDisplay from '../components/ResultsDisplay';
 import AISearchPanel from '../components/AISearchPanel';
 import AIResultsDisplay from '../components/AIResultsDisplay';
+import GlassCard from '../components/GlassCard';
+import { SearchMotif } from '../components/ScienceIllustrations';
 import { listIndices } from '../api/client';
 import { useI18n } from '../App';
 
@@ -31,42 +32,58 @@ export default function SearchPage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Navbar />
-      <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 2 }}>
-          <Tab label={t('search.tabVectorSearch')} />
-          <Tab label={t('search.tabAISearch')} />
-        </Tabs>
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <Box>
+          <Typography variant="h4" gutterBottom>
+            {t('search.title')}
+          </Typography>
+          <Box
+            sx={{
+              width: 60,
+              height: 3,
+              borderRadius: '3px',
+              background: (t2) => t2.palette.custom?.gradientBar || 'linear-gradient(135deg, #0d9488, #2563eb)',
+              mb: 2,
+            }}
+          />
+        </Box>
+        <Box sx={{ position: 'relative', width: 100, height: 80, color: 'primary.main', flexShrink: 0, mt: -1, mr: -1 }}>
+          <SearchMotif />
+        </Box>
+      </Box>
+      <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 2 }}>
+        <Tab label={t('search.tabVectorSearch')} />
+        <Tab label={t('search.tabAISearch')} />
+      </Tabs>
 
-        {tab === 0 ? (
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 3, position: 'sticky', top: 16 }}>
-                <SearchPanel indices={indices} onResults={setResults} />
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={8}>
-              <Paper sx={{ p: 3, minHeight: 400 }}>
-                <ResultsDisplay results={results} />
-              </Paper>
-            </Grid>
+      {tab === 0 ? (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={4}>
+            <GlassCard sx={{ position: 'sticky', top: 24 }}>
+              <SearchPanel indices={indices} onResults={setResults} />
+            </GlassCard>
           </Grid>
-        ) : (
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 3, position: 'sticky', top: 16 }}>
-                <AISearchPanel onResults={setResults} />
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={8}>
-              <Paper sx={{ p: 3, minHeight: 400 }}>
-                <AIResultsDisplay results={results} />
-              </Paper>
-            </Grid>
+          <Grid item xs={12} md={8}>
+            <GlassCard sx={{ minHeight: 400 }}>
+              <ResultsDisplay results={results} />
+            </GlassCard>
           </Grid>
-        )}
-      </Container>
+        </Grid>
+      ) : (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={4}>
+            <GlassCard sx={{ position: 'sticky', top: 24 }}>
+              <AISearchPanel onResults={setResults} />
+            </GlassCard>
+          </Grid>
+          <Grid item xs={12} md={8}>
+            <GlassCard sx={{ minHeight: 400 }}>
+              <AIResultsDisplay results={results} />
+            </GlassCard>
+          </Grid>
+        </Grid>
+      )}
     </Box>
   );
 }

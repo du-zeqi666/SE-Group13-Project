@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
-  Button,
   TextField,
   Typography,
   Alert,
@@ -11,6 +10,7 @@ import {
 } from '@mui/material';
 import { login as apiLogin } from '../api/client';
 import { useAuth, useI18n } from '../App';
+import GlowButton from './GlowButton';
 
 export default function Login() {
   const { login } = useAuth();
@@ -70,16 +70,15 @@ export default function Login() {
         value={form.password}
         onChange={handleChange}
       />
-      <Button
+      <GlowButton
         type="submit"
         fullWidth
-        variant="contained"
         sx={{ mt: 3, mb: 2 }}
         disabled={loading}
         startIcon={loading ? <CircularProgress size={20} /> : null}
       >
         {loading ? t('login.submitting') : t('login.submit')}
-      </Button>
+      </GlowButton>
       <Link component={RouterLink} to="/register" variant="body2">
         {t('login.switchLink')}
       </Link>

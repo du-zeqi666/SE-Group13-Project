@@ -46,6 +46,10 @@ const translations = {
     },
     dashboard: {
       welcome: 'Welcome, {username}',
+      overviewSubtitle: 'Overview of your datasets, indices, and recent activity',
+      sectionOverview: 'Overview',
+      sectionQuickActions: 'Quick Actions',
+      sectionRecentActivity: 'Recent Activity',
       datasets: 'Datasets',
       indices: 'Indices',
       recentSearches: 'Recent Searches',
@@ -124,6 +128,7 @@ const translations = {
       preprocessSuccess: 'Dataset preprocessed ({method}).',
       preprocessFailed: 'Preprocessing failed',
       statusReady: 'ready',
+      statusReadyLocalImport: 'ready (local import)',
       statusPreprocessed: 'preprocessed',
     },
     search: {
@@ -324,6 +329,10 @@ const translations = {
     },
     dashboard: {
       welcome: '欢迎，{username}',
+      overviewSubtitle: '数据集、索引和最近活动的概览',
+      sectionOverview: '概览',
+      sectionQuickActions: '快捷操作',
+      sectionRecentActivity: '最近活动',
       datasets: '数据集',
       indices: '索引',
       recentSearches: '最近查询',
@@ -402,6 +411,7 @@ const translations = {
       preprocessSuccess: '数据集已完成预处理（{method}）。',
       preprocessFailed: '预处理失败',
       statusReady: '就绪',
+      statusReadyLocalImport: '就绪（本地导入）',
       statusPreprocessed: '已预处理',
     },
     search: {

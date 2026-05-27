@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Chip,
   CircularProgress,
   FormControl,
   IconButton,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   Table,
   TableBody,
@@ -25,6 +23,8 @@ import BuildIcon from '@mui/icons-material/Build';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { buildJointIndex, deleteJointIndex } from '../api/client';
 import { useI18n } from '../App';
+import GlassCard from './GlassCard';
+import GlowButton from './GlowButton';
 
 export default function JointIndexManagement({ datasets, jointIndices, onRefresh }) {
   const { t } = useI18n();
@@ -72,7 +72,7 @@ export default function JointIndexManagement({ datasets, jointIndices, onRefresh
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Paper sx={{ p: 3 }}>
+      <GlassCard>
         <Typography variant="h6" gutterBottom>
           {t('jointIndex.buildTitle')}
         </Typography>
@@ -133,19 +133,18 @@ export default function JointIndexManagement({ datasets, jointIndices, onRefresh
             </Select>
           </FormControl>
 
-          <Button
-            variant="contained"
+          <GlowButton
             startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <BuildIcon />}
             onClick={handleBuild}
             disabled={loading}
             fullWidth
           >
             {loading ? t('jointIndex.building') : t('jointIndex.build')}
-          </Button>
+          </GlowButton>
         </Box>
-      </Paper>
+      </GlassCard>
 
-      <Paper sx={{ p: 3 }}>
+      <GlassCard>
         <Typography variant="h6" gutterBottom>
           {t('jointIndex.available')}
         </Typography>
@@ -195,7 +194,7 @@ export default function JointIndexManagement({ datasets, jointIndices, onRefresh
             </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
+      </GlassCard>
     </Box>
   );
 }

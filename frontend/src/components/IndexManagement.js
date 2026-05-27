@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Chip,
   CircularProgress,
   FormControl,
   IconButton,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   Table,
   TableBody,
@@ -24,6 +22,8 @@ import BuildIcon from '@mui/icons-material/Build';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { buildIndex, deleteIndex } from '../api/client';
 import { useI18n } from '../App';
+import GlassCard from './GlassCard';
+import GlowButton from './GlowButton';
 
 const indexTypeLabel = {
   faiss_flat: 'FAISS Flat',
@@ -71,7 +71,7 @@ export default function IndexManagement({ datasets, indices, onRefresh }) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Paper sx={{ p: 3 }}>
+      <GlassCard>
         <Typography variant="h6" gutterBottom>
           {t('dashboard.buildIndex')}
         </Typography>
@@ -120,19 +120,18 @@ export default function IndexManagement({ datasets, indices, onRefresh }) {
             </Select>
           </FormControl>
 
-          <Button
-            variant="contained"
+          <GlowButton
             startIcon={buildLoading ? <CircularProgress size={18} color="inherit" /> : <BuildIcon />}
             onClick={handleBuild}
             disabled={buildLoading}
             fullWidth
           >
             {buildLoading ? t('dashboard.building') : t('dashboard.build')}
-          </Button>
+          </GlowButton>
         </Box>
-      </Paper>
+      </GlassCard>
 
-      <Paper sx={{ p: 3 }}>
+      <GlassCard>
         <Typography variant="h6" gutterBottom>
           {t('dashboard.availableIndices')}
         </Typography>
@@ -183,7 +182,7 @@ export default function IndexManagement({ datasets, indices, onRefresh }) {
             </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
+      </GlassCard>
     </Box>
   );
 }
