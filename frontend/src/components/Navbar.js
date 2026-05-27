@@ -1,5 +1,6 @@
 import React from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, Link as RouterLink,useLocation } from 'react-router-dom';
+
 import {
   AppBar,
   Toolbar,
@@ -19,6 +20,22 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { t, toggleLanguage, themeMode, toggleTheme } = useI18n();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const navSx = (path) => {
+  // 👇 核心修复：只有 路径完全一样 才高亮，什么都不额外匹配
+    const active = location.pathname === path;
+
+    return {
+      color: active ? 'rgba(255,255,255,0.95)' : 'inherit',
+      fontWeight: active ? 700 : 400,
+      bgcolor: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+      borderRadius: 1,
+      //'&:hover': { bgcolor: active ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,0.08)' },
+      '&:hover': { bgcolor: '#bbdefb' },
+    };
+  };
+
 
   const handleLogout = () => {
     logout();
@@ -33,23 +50,23 @@ export default function Navbar() {
           ANN Search
         </Typography>
         <Box sx={{ flexGrow: 1, display: 'flex', gap: 1 }}>
-          <Button color="inherit" component={RouterLink} to="/dashboard">
+          <Button color="inherit" component={RouterLink} to="/dashboard" sx={navSx('/dashboard')}>
             {t('nav.dashboard')}
           </Button>
-          <Button color="inherit" component={RouterLink} to="/dashboard/data">
+          <Button color="inherit" component={RouterLink} to="/dashboard/data" sx={navSx('/dashboard/data')}>
             {t('nav.dataManagement')}
           </Button>
-          <Button color="inherit" component={RouterLink} to="/dashboard/index">
+          <Button color="inherit" component={RouterLink} to="/dashboard/index" sx={navSx('/dashboard/index')}>
             {t('nav.indexManagement')}
           </Button>
-          <Button color="inherit" component={RouterLink} to="/search">
+          <Button color="inherit" component={RouterLink} to="/search" sx={navSx('/search')}>
             {t('nav.search')}
           </Button>
-          <Button color="inherit" component={RouterLink} to="/profile">
+          <Button color="inherit" component={RouterLink} to="/profile" sx={navSx('/profile')}>
             {t('nav.profile')}
           </Button>
           {user?.role === 'admin' && (
-            <Button color="inherit" component={RouterLink} to="/admin/users">
+            <Button color="inherit" component={RouterLink} to="/admin/users" sx={navSx('/admin/users')}>
               {t('nav.adminUsers')}
             </Button>
           )}
