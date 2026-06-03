@@ -123,34 +123,38 @@ export default function DataManagement({ datasets, onRefresh }) {
         ...currentState[dataset.id],
         open: true,
         loading: true,
+        refreshing: forceReload,
         error: '',
       },
     }));
 
     try {
-      // default to UMAP for visualization (server-side precompute + cache)
-      const res = await getDatasetScatter(dataset.id, { method: 'umap' });
+      const params = { method: 'umap' };
+      if (forceReload) params.refresh = 1;  // bust server-side cache
+      const res = await getDatasetScatter(dataset.id, params);
       setScatterState((currentState) => ({
         ...currentState,
         [dataset.id]: {
+          ...currentState[dataset.id],
           open: true,
           loading: false,
+          refreshing: false,
           error: '',
           data: res.data,
-          colorBy: null,
         },
       }));
     } catch (err) {
       setScatterState((currentState) => ({
         ...currentState,
         [dataset.id]: {
+          ...currentState[dataset.id],
           open: true,
           loading: false,
+          refreshing: false,
           error: err.response?.data?.detail
             ? `${err.response?.data?.error || t('data.scatterFailed')}: ${err.response.data.detail}`
             : (err.response?.data?.error || t('data.scatterFailed')),
           data: null,
-          colorBy: null,
         },
       }));
     }
@@ -451,8 +455,13 @@ export default function DataManagement({ datasets, onRefresh }) {
                               <Box>
                                 <Typography variant="subtitle2">{t('data.scatterPlotTitle')}</Typography>
                               </Box>
-                              <Button size="small" startIcon={<RefreshIcon />} onClick={() => loadScatter(ds, true)}>
-                                {t('data.refreshScatter')}
+                              <Button
+                                size="small"
+                                startIcon={scatter.refreshing ? undefined : <RefreshIcon />}
+                                onClick={() => loadScatter(ds, true)}
+                                disabled={scatter.refreshing}
+                              >
+                                {scatter.refreshing ? t('data.refreshingScatter') : t('data.refreshScatter')}
                               </Button>
                             </Box>
 

@@ -488,6 +488,14 @@ def dataset_scatter(dataset_id):
         except Exception:
             max_points = Config.VISUALIZATION_MAX_POINTS
 
+        force_refresh = request.args.get("refresh", "").lower() in ("1", "true", "yes")
+        if force_refresh:
+            cache_path = _scatter_cache_path(dataset_id, method=method)
+            try:
+                os.remove(cache_path)
+            except OSError:
+                pass
+
         payload = _load_or_build_dataset_scatter_method(dataset_id, method=method)
     except Exception as exc:
         traceback.print_exc()

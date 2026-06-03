@@ -99,7 +99,7 @@ export default function CellScatterPlot({ visualization, colorBy = 'cell_type' }
             {t('data.scatterPlotHint')}
           </Typography>
         </Box>
-        <Chip size="small" variant="outlined" label={`${colorBy === 'cluster' ? (t('search.clusterCount') || 'Clusters') : (t('data.groupCount') || 'Groups')}: ${visualization.cluster_count || groupKeys.length}`} />
+        <Chip size="small" variant="outlined" label={`${colorBy === 'cluster' ? (t('search.clusterCount') || 'Clusters') : (t('data.groupCount') || 'Groups')}: ${colorBy === 'cluster' ? (visualization.cluster_count || groupKeys.length) : groupKeys.length}`} />
       </Box>
 
       <Box sx={{ width: '100%', height: 420 }}>
