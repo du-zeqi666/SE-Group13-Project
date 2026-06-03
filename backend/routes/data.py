@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import uuid
 import traceback
 from datetime import datetime
@@ -34,9 +35,13 @@ ALLOWED_EXTENSIONS = {".csv", ".tsv", ".h5", ".h5ad"}
 SCATTER_CACHE_VERSION = 3
 
 
-def _save_numpy(array, cell_names, feature_names, dataset_id, cell_metadata=None):
-    np_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}.npy")
-    meta_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}_meta.json")
+def _save_numpy(array, cell_names, feature_names, dataset_id, cell_metadata=None, target_folder=None):
+    if target_folder is None:
+        target_folder = Config.UPLOAD_FOLDER
+    safe_id = os.path.basename(dataset_id)
+    os.makedirs(target_folder, exist_ok=True)
+    np_path = os.path.join(target_folder, f"{safe_id}.npy")
+    meta_path = os.path.join(target_folder, f"{safe_id}_meta.json")
     np.save(np_path, array)
     with open(meta_path, "w") as f:
         import json
@@ -95,15 +100,17 @@ def _resolve_local_data_path(path_value):
     if not raw_path:
         raise ValueError("path is required")
 
+    os.makedirs(Config.DATA_LOCAL_FOLDER, exist_ok=True)
+
     candidate = raw_path
     if not os.path.isabs(candidate):
-        candidate = os.path.abspath(os.path.join(Config.DATA_ROOT, candidate))
+        candidate = os.path.abspath(os.path.join(Config.DATA_LOCAL_FOLDER, candidate))
     else:
         candidate = os.path.abspath(candidate)
 
-    data_root = os.path.abspath(Config.DATA_ROOT)
+    local_root = os.path.abspath(Config.DATA_LOCAL_FOLDER)
     try:
-        inside_root = os.path.commonpath([candidate, data_root]) == data_root
+        inside_root = os.path.commonpath([candidate, local_root]) == local_root
     except ValueError:
         inside_root = False
     if not inside_root:
@@ -116,24 +123,38 @@ def _resolve_local_data_path(path_value):
 
 def _list_local_importable_files():
     candidates = []
-    for root, _, files in os.walk(Config.DATA_ROOT):
+    os.makedirs(Config.DATA_LOCAL_FOLDER, exist_ok=True)
+    for root, _, files in os.walk(Config.DATA_LOCAL_FOLDER):
         for file_name in files:
             ext = os.path.splitext(file_name)[1].lower()
             if ext not in ALLOWED_EXTENSIONS:
                 continue
             absolute_path = os.path.join(root, file_name)
-            relative_path = os.path.relpath(absolute_path, Config.DATA_ROOT).replace("\\", "/")
+            relative_path = os.path.relpath(absolute_path, Config.DATA_LOCAL_FOLDER).replace("\\", "/")
             candidates.append(relative_path)
     candidates.sort()
     return candidates
 
 
-def _load_dataset_array(dataset_id):
+def _data_folder(storage_folder):
+    """Resolve the file-system directory for a given storage_folder label."""
+    mapping = {
+        "data_web": Config.UPLOAD_FOLDER,
+        "data_pre": Config.DATA_PRE_FOLDER,
+    }
+    folder = mapping.get(storage_folder)
+    if folder is None:
+        raise ValueError(f"Unknown storage_folder: {storage_folder}")
+    return folder
+
+
+def _load_dataset_array(dataset_id, storage_folder="data_web"):
     if not _valid_uuid(dataset_id):
         return None, None, None
     safe_id = os.path.basename(dataset_id)
-    np_path = os.path.join(Config.UPLOAD_FOLDER, f"{safe_id}.npy")
-    meta_path = os.path.join(Config.UPLOAD_FOLDER, f"{safe_id}_meta.json")
+    folder = _data_folder(storage_folder)
+    np_path = os.path.join(folder, f"{safe_id}.npy")
+    meta_path = os.path.join(folder, f"{safe_id}_meta.json")
     if not os.path.exists(np_path):
         return None, None, None
     array = np.load(np_path)
@@ -213,7 +234,7 @@ def _extract_umap_from_cell_metadata(cell_metadata, expected_rows):
     return coords
 
 
-def _load_or_build_dataset_scatter_method(dataset_id, method="pca"):
+def _load_or_build_dataset_scatter_method(dataset_id, method="pca", storage_folder="data_web"):
     method = (method or "pca").lower()
     cache_path = _scatter_cache_path(dataset_id, method=method)
     if os.path.exists(cache_path):
@@ -232,7 +253,7 @@ def _load_or_build_dataset_scatter_method(dataset_id, method="pca"):
             except OSError:
                 pass
 
-    array, _, _, cell_metadata = _load_dataset_array(dataset_id)
+    array, _, _, cell_metadata = _load_dataset_array(dataset_id, storage_folder=storage_folder)
     if array is None:
         return None
 
@@ -369,7 +390,7 @@ def import_local_dataset():
         "cell_count": array.shape[0],
         "feature_count": array.shape[1],
         "message": "Local dataset imported successfully",
-        "path": os.path.relpath(local_path, Config.DATA_ROOT).replace("\\", "/"),
+        "path": os.path.relpath(local_path, Config.DATA_LOCAL_FOLDER).replace("\\", "/"),
     }), 201
 
 
@@ -431,10 +452,14 @@ def delete_dataset(dataset_id):
         SearchHistory.query.filter(SearchHistory.index_id.in_(index_ids)).delete(synchronize_session=False)
 
     safe_id = os.path.basename(dataset_id)
-    for suffix in [".npy", "_meta.json"]:
-        p = os.path.join(Config.UPLOAD_FOLDER, f"{safe_id}{suffix}")
-        if os.path.exists(p):
-            os.remove(p)
+    # Clean up data_web (or current storage) files
+    for folder in [Config.UPLOAD_FOLDER, Config.DATA_PRE_FOLDER]:
+        for suffix in [".npy", "_meta.json"]:
+            p = os.path.join(folder, f"{safe_id}{suffix}")
+            if os.path.exists(p):
+                os.remove(p)
+    # Only delete the original file if it was a web upload (inside UPLOAD_FOLDER).
+    # Never delete locally imported source files (they live in data_loc).
     if ds.original_file and _is_managed_upload_path(ds.original_file) and os.path.exists(ds.original_file):
         os.remove(ds.original_file)
 
@@ -454,7 +479,10 @@ def preprocess_dataset(dataset_id):
     body = request.get_json(silent=True) or {}
     method = body.get("method", "normalize")
 
-    array, cell_names, feature_names, cell_metadata = _load_dataset_array(dataset_id)
+    # Load from current storage location
+    array, cell_names, feature_names, cell_metadata = _load_dataset_array(
+        dataset_id, storage_folder=ds.storage_folder
+    )
     if array is None:
         return jsonify({"error": "Dataset data not found on disk"}), 404
 
@@ -467,7 +495,22 @@ def preprocess_dataset(dataset_id):
     else:
         return jsonify({"error": f"Unknown method: {method}"}), 400
 
-    _save_numpy(array.astype(np.float32), cell_names, feature_names, dataset_id, cell_metadata=cell_metadata)
+    # Copy original to data_pre first if not already there, then write preprocessed version there
+    safe_id = os.path.basename(dataset_id)
+    os.makedirs(Config.DATA_PRE_FOLDER, exist_ok=True)
+    src_npy = os.path.join(_data_folder(ds.storage_folder), f"{safe_id}.npy")
+    src_meta = os.path.join(_data_folder(ds.storage_folder), f"{safe_id}_meta.json")
+    dst_npy = os.path.join(Config.DATA_PRE_FOLDER, f"{safe_id}.npy")
+    dst_meta = os.path.join(Config.DATA_PRE_FOLDER, f"{safe_id}_meta.json")
+
+    if ds.storage_folder != "data_pre":
+        shutil.copy2(src_npy, dst_npy)
+        shutil.copy2(src_meta, dst_meta)
+
+    # Save preprocessed version into data_pre
+    _save_numpy(array.astype(np.float32), cell_names, feature_names, dataset_id,
+                cell_metadata=cell_metadata, target_folder=Config.DATA_PRE_FOLDER)
+    ds.storage_folder = "data_pre"
     ds.status = f"preprocessed ({label})"
     db.session.commit()
     return jsonify({"message": f"Dataset preprocessed: {label}", "shape": list(array.shape)})
@@ -496,7 +539,7 @@ def dataset_scatter(dataset_id):
             except OSError:
                 pass
 
-        payload = _load_or_build_dataset_scatter_method(dataset_id, method=method)
+        payload = _load_or_build_dataset_scatter_method(dataset_id, method=method, storage_folder=ds.storage_folder)
     except Exception as exc:
         traceback.print_exc()
         return jsonify({
@@ -507,7 +550,7 @@ def dataset_scatter(dataset_id):
     if payload is None:
         return jsonify({"error": "Dataset data not found on disk"}), 404
 
-    array, cell_names, _, cell_metadata = _load_dataset_array(dataset_id)
+    array, cell_names, _, cell_metadata = _load_dataset_array(dataset_id, storage_folder=ds.storage_folder)
     coords = payload["coords"].astype(np.float32)
     labels = payload["labels"].astype(np.int32)
     centers = payload["centers"].astype(np.float32)

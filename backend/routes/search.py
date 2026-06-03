@@ -24,9 +24,11 @@ MAX_HISTORY = 10
 FILTER_FIELDS = ("cell_type", "disease", "AgeGroup", "donor_id")
 
 
-def _load_dataset_array(dataset_id):
-    np_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}.npy")
-    meta_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}_meta.json")
+def _load_dataset_array(dataset_id, storage_folder="data_web"):
+    folder = Config.UPLOAD_FOLDER if storage_folder == "data_web" else Config.DATA_PRE_FOLDER
+    safe_id = os.path.basename(dataset_id)
+    np_path = os.path.join(folder, f"{safe_id}.npy")
+    meta_path = os.path.join(folder, f"{safe_id}_meta.json")
     if not os.path.exists(np_path):
         return None, None, None
     import json
@@ -160,7 +162,7 @@ def query():
     if metric and metric != index_meta.metric:
         return jsonify({"error": f"Index metric is '{index_meta.metric}'. Please use the same metric for search."}), 400
 
-    _, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id)
+    _, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id, storage_folder=index_meta.dataset.storage_folder)
     if cell_names is None:
         return jsonify({"error": "Dataset data not found"}), 404
 
@@ -230,7 +232,7 @@ def query_by_id():
     if metric and metric != index_meta.metric:
         return jsonify({"error": f"Index metric is '{index_meta.metric}'. Please use the same metric for search."}), 400
 
-    array, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id)
+    array, cell_names, _, cell_metadata = _load_dataset_array(index_meta.dataset_id, storage_folder=index_meta.dataset.storage_folder)
     if array is None:
         return jsonify({"error": "Dataset data not found"}), 404
 

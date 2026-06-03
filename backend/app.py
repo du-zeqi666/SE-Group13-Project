@@ -33,6 +33,21 @@ def _migrate_search_history():
             conn.execute(sa.text(
                 "ALTER TABLE search_history ADD COLUMN query_text TEXT DEFAULT NULL"
             ))
+
+
+def _migrate_dataset_storage_folder():
+    """Add storage_folder column to datasets table if missing."""
+    import sqlalchemy as sa
+    inspector = sa.inspect(db.engine)
+    if "datasets" not in inspector.get_table_names():
+        return
+    columns = [c["name"] for c in inspector.get_columns("datasets")]
+    if "storage_folder" not in columns:
+        with db.engine.connect() as conn:
+            conn.execute(sa.text(
+                "ALTER TABLE datasets ADD COLUMN storage_folder VARCHAR(50) NOT NULL DEFAULT 'data_web'"
+            ))
+            conn.execute(sa.text("COMMIT"))
         # Make index_id nullable for joint/RAG searches that don't use single-dataset indices
         col_info = next((c for c in inspector.get_columns("search_history") if c["name"] == "index_id"), None)
         if col_info and not col_info.get("nullable", False):
@@ -58,12 +73,15 @@ def create_app():
         Config.INDEX_FOLDER,
         Config.VISUALIZATION_FOLDER,
         Config.CHROMA_PATH,
+        Config.DATA_LOCAL_FOLDER,
+        Config.DATA_PRE_FOLDER,
     ]:
         os.makedirs(path, exist_ok=True)
 
     with app.app_context():
         db.create_all()
         _migrate_search_history()
+        _migrate_dataset_storage_folder()
         ensure_admin_user(Config)
 
     app.register_blueprint(auth_bp)

@@ -60,10 +60,12 @@ def _cleanup_user_storage(user):
 
     for dataset in user.datasets:
         safe_id = os.path.basename(dataset.id)
-        for suffix in [".npy", "_meta.json"]:
-            path = os.path.join(Config.UPLOAD_FOLDER, f"{safe_id}{suffix}")
-            if os.path.exists(path):
-                os.remove(path)
+        for folder in [Config.UPLOAD_FOLDER, Config.DATA_PRE_FOLDER]:
+            for suffix in [".npy", "_meta.json"]:
+                path = os.path.join(folder, f"{safe_id}{suffix}")
+                if os.path.exists(path):
+                    os.remove(path)
+        # Only delete web-uploaded original files, never touch data_loc sources
         if dataset.original_file and _is_managed_upload_path(dataset.original_file) and os.path.exists(dataset.original_file):
             os.remove(dataset.original_file)
 

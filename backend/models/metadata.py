@@ -28,6 +28,7 @@ class Dataset(db.Model):
     feature_names_preview = db.Column(db.Text, nullable=False, default="[]")
     original_file = db.Column(db.String(500))
     status = db.Column(db.String(100), nullable=False, default="ready")
+    storage_folder = db.Column(db.String(50), nullable=False, default="data_web")
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     indices = db.relationship("SearchIndex", back_populates="dataset", cascade="all, delete-orphan")

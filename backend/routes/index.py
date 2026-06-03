@@ -23,9 +23,11 @@ ALLOWED_METRICS = {"l2", "cosine", "ip"}
 FILTER_FIELDS = ("cell_type", "disease", "AgeGroup", "donor_id")
 
 
-def _load_dataset_array(dataset_id):
-    np_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}.npy")
-    meta_path = os.path.join(Config.UPLOAD_FOLDER, f"{dataset_id}_meta.json")
+def _load_dataset_array(dataset_id, storage_folder="data_web"):
+    folder = Config.UPLOAD_FOLDER if storage_folder == "data_web" else Config.DATA_PRE_FOLDER
+    safe_id = os.path.basename(dataset_id)
+    np_path = os.path.join(folder, f"{safe_id}.npy")
+    meta_path = os.path.join(folder, f"{safe_id}_meta.json")
     if not os.path.exists(np_path):
         return None, None, None
     import json
@@ -79,7 +81,7 @@ def build_index():
     if not ds:
         return jsonify({"error": "Dataset not found"}), 404
 
-    array, cell_names, feature_names, _ = _load_dataset_array(dataset_id)
+    array, cell_names, feature_names, _ = _load_dataset_array(dataset_id, storage_folder=ds.storage_folder)
     if array is None:
         return jsonify({"error": "Dataset data not found on disk"}), 404
 
@@ -146,7 +148,7 @@ def get_index(index_id):
     if not idx:
         return jsonify({"error": "Index not found"}), 404
 
-    _, _, _, cell_metadata = _load_dataset_array(idx.dataset_id)
+    _, _, _, cell_metadata = _load_dataset_array(idx.dataset_id, storage_folder=idx.dataset.storage_folder)
     filter_options = _build_filter_options(cell_metadata)
 
     payload = idx.to_dict()

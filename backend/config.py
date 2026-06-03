@@ -41,12 +41,14 @@ class Config:
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
     STORAGE_PATH = os.path.join(os.path.dirname(__file__), "storage")
-    UPLOAD_FOLDER = os.path.join(STORAGE_PATH, "uploads")
+    DATA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+    UPLOAD_FOLDER = os.path.join(DATA_ROOT, "data_web")
+    DATA_LOCAL_FOLDER = os.path.join(DATA_ROOT, "data_loc")
+    DATA_PRE_FOLDER = os.path.join(DATA_ROOT, "data_pre")
     INDEX_FOLDER = os.environ.get("INDEX_FOLDER") or _default_index_folder()
     VISUALIZATION_FOLDER = os.path.join(STORAGE_PATH, "visualizations")
     VISUALIZATION_MAX_POINTS = int(os.environ.get("VISUALIZATION_MAX_POINTS", "5000"))
     CHROMA_PATH = os.path.abspath(os.path.join(STORAGE_PATH, "chromadb"))
-    DATA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH_MB", "100")) * 1024 * 1024
 
