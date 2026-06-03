@@ -1,0 +1,327 @@
+# SE-Group13-Project
+
+Course project for Group 13 of the 2025-2026 Spring Software Engineering course at Nankai University.
+
+Chinese version: [README.md](README.md)
+
+Environment issues and fixes: [docs/环境问题.md](docs/%E7%8E%AF%E5%A2%83%E9%97%AE%E9%A2%98.md)
+
+---
+
+## ANN Search - Single-Cell Data Analysis
+
+This project is a full-stack web application for Approximate Nearest Neighbor search on high-dimensional single-cell datasets. It supports dataset upload, preprocessing, ANN index construction, interactive search, account management, and administrator-side user management.
+
+---
+
+## Highlights
+
+- JWT-based authentication with register, login, and current-user APIs
+- Personal profile management, including username, email, and password updates
+- Administrator user management for creating, editing, resetting, and deleting regular users
+- CSV, TSV, HDF5, and H5AD dataset upload, plus one-click demo dataset generation
+- Dataset preprocessing with L2 normalization or per-feature standardization
+- FAISS Flat, FAISS IVF, and Annoy index construction
+- Multi-dataset joint index construction with ChromaDB HNSW for cross-dataset retrieval
+- RAG-powered natural language AI search with automatic metadata extraction and result interpretation
+- Search by raw vector or by cell ID, with configurable k, distance metric, and metadata filters
+- Ranked results, chart visualization, CSV export, and recent search history with single-item, bulk, and clear-all deletion controls
+- Chinese and English frontend interface switching
+- Delivery documents including development guide, user manual, and test report
+
+---
+
+## Architecture
+
+| Layer | Technologies |
+| --- | --- |
+| Backend | Python 3.9+, Flask 2.3, Flask-CORS, Flask-JWT-Extended, Flask-SQLAlchemy, PyMySQL |
+| ANN / Data | FAISS-CPU, Annoy, ChromaDB, NumPy, Pandas, h5py, scikit-learn, sentence-transformers |
+| Frontend | React 18, React Router 6, Material UI 5, Axios, Recharts |
+| Storage | MySQL metadata + local dataset files + local ANN index files |
+
+Metadata such as users, datasets, indices, and search history are stored in MySQL. High-dimensional arrays and ANN index artifacts remain on disk under `backend/storage`.
+
+---
+
+## Prerequisites
+
+- Python 3.9+
+- Node.js 16+ and npm
+- MySQL 8.0+ on port 3306
+- Windows PowerShell for the commands documented below
+
+---
+
+## Quick Start
+
+### 1. Create the MySQL database
+
+```sql
+CREATE DATABASE ann_search CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 2. Create `backend/.env`
+
+Copy the backend environment template:
+
+```powershell
+Copy-Item .\backend\.env.example .\backend\.env
+```
+
+At minimum, fill in:
+
+```env
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=ann_search
+DB_USER=root
+DB_PASSWORD=your-mysql-password
+```
+
+If you want the first administrator account to be created automatically, also set:
+
+```env
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change-this-password
+```
+
+See [backend/.env.example](backend/.env.example) for field-by-field comments. If the admin-related values are left empty, no administrator account is auto-created.
+
+Optional backend overrides are also documented in [backend/.env.example](backend/.env.example), including `DATABASE_URL`, `INDEX_FOLDER`, `VISUALIZATION_MAX_POINTS`, `MAX_CONTENT_LENGTH_MB`, and the `RAG_*` settings.
+
+### 3. Optional: create `frontend/.env.local`
+
+The frontend defaults to `http://localhost:5000` for API calls. Only create this file when your backend runs on a different address:
+
+```powershell
+Copy-Item .\frontend\.env.local.example .\frontend\.env.local
+```
+
+Then edit:
+
+```env
+REACT_APP_API_URL=http://localhost:5000
+```
+
+### 4. Set up and start the backend
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r .\backend\requirements.txt
+python .\backend\app.py
+```
+
+If PowerShell blocks activation, run the virtual environment interpreter directly:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r .\backend\requirements.txt
+.\.venv\Scripts\python.exe .\backend\app.py
+```
+
+Backend URL: `http://localhost:5000`
+
+### 5. Set up and start the frontend
+
+```powershell
+cd frontend
+npm install
+npm start
+```
+
+Frontend URL: `http://localhost:3000`
+
+### 6. Optional: use one-click scripts
+
+From the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_project.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\stop_project.ps1
+```
+
+---
+
+## Local Files and Generated Directories
+
+| Path | Needed locally | How it is created |
+| --- | --- | --- |
+| `backend/.env` | Yes | Copy [backend/.env.example](backend/.env.example) and fill in local values |
+| `frontend/.env.local` | Optional | Copy [frontend/.env.local.example](frontend/.env.local.example) only if the frontend API URL must change |
+| `data/` | Optional but recommended for course data | Store large local datasets here; keep dataset docs, but do not commit raw `.h5ad` files |
+| `.venv/` | Yes | Run `python -m venv .venv` |
+| `node_modules/` | Yes | Run `npm install` in `frontend` |
+| `build/` | Optional | Run `npm run build` in `frontend` |
+| `backend/storage/` | Runtime only | Generated by uploads, preprocessing, and index building |
+| `__pycache__/`, `*.pyc`, `*.pyo`, `*.pyd` | No manual action | Generated automatically by Python |
+
+### Course dataset location
+
+If you use the course-provided liver dataset locally, place it under `data/`, for example:
+
+```text
+data/
+├── liver.h5ad
+└── 数据说明.md
+```
+
+The large raw dataset file is intentionally ignored by `.gitignore`, so it will not be committed. Keep only lightweight documentation such as [data/数据说明.md](data/数据说明.md) in Git.
+
+### Recommended processing for the provided `.h5ad` dataset
+
+For the provided `liver.h5ad`, the recommended ANN input is the existing PCA embedding in `obsm["X_pca"]`, not the full raw expression matrix.
+
+Practical mapping for this project:
+
+1. Use `obsm["X_pca"]` as the cell vector matrix for index construction.
+2. Use `obs` metadata such as `cell_type`, `disease`, and `AgeGroup` as returned cell information and future filter fields.
+3. Use `obsm["X_umap"]` or `obsm["X_tsne"]` for visualization only, and the current frontend scatter plot will prefer `obsm["X_umap"]` when available.
+4. Keep the raw `X` matrix as source data when needed, but avoid using it as the default retrieval vector because it is much higher-dimensional and more expensive.
+
+Note: the current backend upload path already supports generic CSV/TSV/HDF5 input, but this specific course `.h5ad` file contains structured AnnData groups and precomputed embeddings. To fully align with the course data design, the loader should preferentially read `obsm["X_pca"]` and selected `obs` fields.
+
+---
+
+## Daily Startup Commands
+
+Manual startup:
+
+Terminal 1:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python .\backend\app.py
+```
+
+Terminal 2:
+
+```powershell
+cd frontend
+npm start
+```
+
+Script-based startup:
+
+```powershell
+.\scripts\start_project.ps1
+.\scripts\stop_project.ps1
+```
+
+The start script checks ports 3000 and 5000 to avoid duplicate startup. The stop script terminates the frontend and backend processes listening on those ports.
+
+---
+
+## Usage Flow
+
+1. Open `http://localhost:3000`.
+2. Register a regular user, or log in with an administrator account if you configured one in `backend/.env`.
+3. Go to Dashboard and upload a dataset, or generate demo data.
+4. Optionally preprocess the dataset.
+5. Build a FAISS or Annoy index for the dataset.
+6. Optionally build a joint index combining multiple datasets (supports cross-dataset RAG search).
+7. Open the Search page and search by vector, cell ID, or natural language (AI search).
+8. Review ranked results, charts, AI analysis, CSV export, and recent search history.
+9. Use the Profile page to manage your own account.
+10. If you are an administrator, use the User Management page to manage regular users.
+
+---
+
+## API Overview
+
+All endpoints are prefixed with `/api`.
+
+- Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
+- Users: `PATCH /api/users/me`, `PATCH /api/users/me/password`, `GET /api/users`, `POST /api/users`, `PATCH /api/users/<id>`, `PATCH /api/users/<id>/password`, `DELETE /api/users/<id>`
+- Data: `POST /api/data/upload`, `POST /api/data/generate_demo`, `GET /api/data/datasets`, `DELETE /api/data/datasets/<id>`, `POST /api/data/datasets/<id>/preprocess`
+- Index: `POST /api/index/build`, `GET /api/index/list`, `GET /api/index/<id>`, `DELETE /api/index/<id>`
+- Joint Index: `POST /api/joint/build`, `GET /api/joint/list`, `GET /api/joint/<id>`, `DELETE /api/joint/<id>`, `POST /api/joint/query`, `GET /api/joint/<id>/datasets`
+- RAG: `POST /api/rag/search`, `POST /api/rag/analyze`
+- Search: `POST /api/search/query`, `POST /api/search/query_by_id`, `GET /api/search/history`
+- Search history management: `DELETE /api/search/history`
+
+`POST /api/search/query` and `POST /api/search/query_by_id` also accept an optional `filters` object with `cell_type`, `disease`, `AgeGroup`, and `donor_id` for conditional retrieval. RAG search accepts natural language queries and returns AI-powered analysis of the results.
+
+---
+
+## Project Structure
+
+```text
+.
+├── backend/
+│   ├── app.py
+│   ├── config.py
+│   ├── .env.example
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── metadata.py
+│   │   └── user.py
+│   ├── routes/
+│   │   ├── auth.py
+│   │   ├── data.py
+│   │   ├── index.py
+│   │   ├── joint.py
+│   │   ├── rag.py
+│   │   ├── search.py
+│   │   └── users.py
+│   ├── services/
+│   │   ├── ann_service.py
+│   │   ├── chroma_service.py
+│   │   ├── data_service.py
+│   │   └── rag_service.py
+│   └── storage/
+├── frontend/
+│   ├── .env.local.example
+│   ├── package.json
+│   ├── public/
+│   └── src/
+│       ├── App.js
+│       ├── api/client.js
+│       ├── components/
+│       │   ├── AISearchPanel.js
+│       │   ├── AIResultsDisplay.js
+│       │   ├── DataManagement.js
+│       │   ├── IndexManagement.js
+│       │   ├── JointIndexManagement.js
+│       │   ├── Login.js
+│       │   ├── Navbar.js
+│       │   ├── Register.js
+│       │   ├── ResultsDisplay.js
+│       │   └── SearchPanel.js
+│       ├── i18n.js
+│       └── pages/
+│           ├── AdminUsersPage.js
+│           ├── AuthPage.js
+│           ├── DashboardDataPage.js
+│           ├── DashboardIndexPage.js
+│           ├── DashboardPage.js
+│           ├── ProfilePage.js
+│           └── SearchPage.js
+├── docs/
+│   ├── development-guide.md
+│   ├── test-report.md
+│   └── user-manual.md
+├── scripts/
+│   ├── start_project.ps1
+│   └── stop_project.ps1
+├── README.md
+└── README_EN.md
+```
+
+---
+
+## Verification
+
+Backend syntax check:
+
+```powershell
+.\.venv\Scripts\python.exe -m compileall .\backend
+```
+
+Frontend production build:
+
+```powershell
+cd frontend
+npm run build
+```
