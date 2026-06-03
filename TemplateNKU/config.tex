@@ -1,0 +1,583 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 文档类与全局设置
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \documentclass[aspectratio=169]{beamer}
+%tikz包
+\usepackage{amsmath, amssymb, xcolor, tikz}
+\usetikzlibrary{calc}  % 计算坐标
+\usetikzlibrary{backgrounds}  % 背景支持（如果想使用 on background layer）
+\usepackage[most]{tcolorbox}
+\usepackage{xparse}
+
+%字体设置
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{unicode-math}
+\usepackage{etoolbox} % 用于开关切换与核心排版补丁
+
+% \newtoggle{fontBlackTheme}
+% \togglefalse{fontBlackTheme}
+
+\newcommand{\UseBlackFont}{\toggletrue{fontBlackTheme}}
+\newcommand{\UseSongFont} { \togglefalse{fontBlackTheme}}
+
+% ========================================================
+% 【核心优化】字体全局控制解耦
+% 拆分中英文字体设置，提供原子化命令，实现自由组合与扩展
+% ========================================================
+\newcommand{\SetENFont}[1]{%
+  \setmainfont{#1}%
+  \setsansfont{#1}%
+  \setmonofont{#1}%
+}
+\newcommand{\SetCNFont}[1]{%
+  \setCJKmainfont{#1}%
+  \setCJKsansfont{#1}%
+  \setCJKmonofont{#1}%
+}
+\newcommand{\SetMathFontConfig}[1]{%
+  \setmathfont{#1}%
+}
+
+% 【新增】混合风格组合：中文黑体 + 英文新罗马
+\newcommand{\UseHeiRomanFont}{%
+  \SetENFont{Times New Roman}%
+  \SetCNFont{Noto Sans CJK SC}%
+  \SetMathFontConfig{TeX Gyre Termes Math}%
+}
+
+% 经典风格封装：全黑体
+\newcommand{\ThemeBlackSans}{%
+  \SetENFont{Liberation Sans}%
+  \SetCNFont{Noto Sans CJK SC}%
+  \SetMathFontConfig{TeX Gyre Termes Math}%
+}
+
+% 经典风格封装：全宋体/新罗马
+\newcommand{\ThemeSongRoman}{%
+  \SetENFont{Times New Roman}%
+  \SetCNFont{Noto Serif CJK SC}%
+  \SetMathFontConfig{TeX Gyre Termes Math}%
+}
+
+% \UseSongFont   % ← 这里启用“宋体+Times New Roman”主题
+% \UseBlackFont  % ← 启用“黑体+Liberation Sans”主题
+
+% %—— 根据开关选择字体（原逻辑保留，底层调用解耦命令更清爽） —— 
+% \iftoggle{fontBlackTheme}{
+%   \ThemeBlackSans
+% }{
+%   \ThemeSongRoman
+% }
+% 注意：若想完全摆脱开关直接使用组合，可以在这里直接调用 \UseHeiRomanFont 等命令覆盖上述设置
+
+%------------------------------
+% 伪代码环境
+%------------------------------
+% 引入算法宏包：ruled(顶部/底部画线), linesnumbered(显示行号), vlined(显示代码块垂线)
+\usepackage[ruled,linesnumbered,vlined]{algorithm2e}
+
+% 将 algorithm2e 默认的英文关键词替换为中文
+% \SetKwInput{KwIn}{输入}
+% \SetKwInput{KwOut}{输出}
+% \SetAlgorithmName{算法}{算法}{算法列表}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 图形、色彩与数学设置
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{tikz}
+\usepackage[table]{xcolor}    % 表格色块
+\usepackage{booktabs}         % 三线表格式
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+\usepackage{tcolorbox}
+\usepackage{amsmath}
+\usepackage{xcolor}
+
+\usepackage{unicode-math}
+\setmathfont{TeX Gyre Termes Math}
+\setbeamercolor{block title}{fg=black,bg=gray!10}
+\setbeamerfont{block title}{size=\normalsize,family=\rmfamily}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beamer 主题与风格设置
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 清除默认页眉与 frametitle 模板（后续自定义）
+\setbeamertemplate{headline}{}
+\setbeamertemplate{frametitle}{}
+\setbeamertemplate{itemize item}[circle]
+
+% 内外主题（可根据需求替换）
+\useoutertheme[subsection=true]{miniframes} 
+\useinnertheme{default}
+\usecolortheme{default}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 颜色定义（可自定义调色板）
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\definecolor{lightpurple}{RGB}{134,0,106}
+\definecolor{midpurple}{RGB}{112,0,95}
+\definecolor{darkpurple}{RGB}{134,0,106}
+\definecolor{myred}{RGB}{150,50,30}
+\definecolor{mygreen}{RGB}{45,125,77}
+\definecolor{mypurple}{RGB}{120,61,137}
+\definecolor{myorange}{RGB}{190,88,32}
+\definecolor{myitem}{RGB}{35,35,35}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 导航栏与页眉设置
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\makeatletter
+% 设置顶部导航栏（用于章节、子章节导航）
+\setbeamertemplate{headline}{%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=2ex,dp=1ex]{section in head/foot}
+    \insertsectionnavigationhorizontal{\paperwidth}{}{}%
+  \end{beamercolorbox}%
+}
+\setbeamercolor{section in head/foot}{bg=lightpurple, fg=white}
+\setbeamercolor{subsection in head/foot}{bg=midpurple, fg=white}
+
+% 自定义页眉
+\setbeamertemplate{headline}{%
+  \ifnum\value{framenumber}>1
+    \ifx\insertframetitle\@empty
+      % 【修复】即使没有标题，也撑开等量高度，防止正文排版上下跳动
+      \rule{0pt}{0.9cm}
+    \else
+      % 视觉层：保持 overlay 不变
+      \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=west, font=\normalsize, text=black, xshift=0.2cm, yshift=-0.4cm]
+              at (current page.north west){\insertframetitle};
+        \draw[line width=1pt, color=midpurple]
+              ([yshift=-0.7cm]current page.north west) -- ([yshift=-0.7cm]current page.north east);
+      \end{tikzpicture}%
+      % 【核心修复】物理占位层：告诉引擎顶部有 0.9cm 的安全距离（0.7cm线高 + 0.2cm呼吸空间）
+      \rule{0pt}{0.2cm}%
+    \fi
+  \fi
+}
+\makeatother
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 图注样式设置
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{caption}
+\setbeamerfont{caption}{size=\footnotesize}
+\setbeamercolor{caption}{fg=black}
+% 此处使用默认字体，确保中文统一为 Noto Sans CJK SC
+\setbeamerfont{caption name}{size=\footnotesize}
+\setbeamercolor{caption name}{fg=black}
+\setbeamertemplate{caption}[numbered]
+\renewcommand{\figurename}{图}
+
+% 3. 调整浮动体（如 figure）与其上下正文之间的全局间距
+\setlength{\intextsep}{6pt plus 2pt minus 2pt}
+
+% \textfloatsep 适用于浮动到页面顶部 [t] 或底部 [b] 的图片与正文的间距
+\setlength{\textfloatsep}{6pt plus 2pt minus 2pt}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 列表样式设置
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\makeatletter
+% 一级列表 (大 item)
+\def\@listi{\leftmargin\leftmargini
+    \topsep 0.4em \@plus 0.1em \@minus 0.1em    % 缩小与上方正文间距
+    \parsep 0pt                                 
+    \itemsep 0.4em \@plus 0.2em \@minus 0.1ex}  % 【关键】从 1.0em 改为 0.4em
+\let\@listI\@listi
+
+% 二级列表 (小 item)
+\def\@listii{\leftmargin\leftmarginii
+    \topsep 0.2em \@plus 0.1em \@minus 0.1em 
+    \parsep 0pt
+    \itemsep 0.2em \@plus 0.1em \@minus 0.05ex} % 【关键】进一步压缩二级列表间距
+\makeatother
+
+% 三级列表 (更小的 item)
+\def\@listiii{\leftmargin\leftmarginiii
+    \topsep 0.1em
+    \parsep 0pt
+    \itemsep 0.2em}
+\makeatother
+
+% 自定义无序列表图标，采用 \raisebox 微调图标位置
+\newcommand{\useBigCircleItem}{%
+  \setbeamertemplate{itemize item}{\raisebox{0.3ex}{\tikz{\draw[myitem, fill=myitem] (0,0) circle (2pt);}}}%
+  \setbeamertemplate{itemize subitem}{\raisebox{0.3ex}{\tikz{\draw[myitem, fill=myitem] (0,0) circle (2pt);}}}%
+  \setbeamertemplate{itemize subsubitem}{\raisebox{0.3ex}{\tikz{\draw[myitem, fill=myitem] (0,0) circle (2pt);}}}%
+}
+\newcommand{\useSmallCircleItem}{%
+  \setbeamertemplate{itemize item}{\raisebox{0.35ex}{\tikz{\draw[myitem, fill=myitem, opacity=0.8] (0,0) circle (1pt);}}}%
+  \setbeamertemplate{itemize subitem}{\raisebox{0.35ex}{\tikz{\draw[myitem, fill=myitem, opacity=0.8] (0,0) circle (1pt);}}}%
+  \setbeamertemplate{itemize subsubitem}{\raisebox{0.35ex}{\tikz{\draw[myitem, fill=myitem, opacity=0.8] (0,0) circle (1pt);}}}%
+}
+% 默认使用大圆圈
+\useBigCircleItem
+
+% 有序列表样式
+\setbeamercolor{enumerate item}{fg=lightpurple}
+\setbeamertemplate{enumerate item}{%
+  \usebeamerfont*{enumerate item}%
+  \color{enumerate item.fg}\insertenumlabel.%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 页脚设置
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setbeamertemplate{footline}{%
+  \ifnum\insertpagenumber>2
+    \begin{tikzpicture}[remember picture,overlay]
+      \node[fill=lightpurple, minimum width=0.3\paperwidth, minimum height={0.4cm+1pt}, anchor=south west]
+           at ([xshift=-1pt,yshift=-1pt]current page.south west) (leftblock) {};
+      \node[fill=midpurple, minimum width=0.6\paperwidth, minimum height={0.4cm+1pt}, anchor=south west]
+           at ([xshift=0.3\paperwidth-1pt,yshift=-1pt]current page.south west) (midblock) {};
+      \node[fill=lightpurple, minimum width={0.1\paperwidth+1pt}, minimum height={0.4cm+1pt}, anchor=south west]
+           at ([xshift=0.9\paperwidth-1pt,yshift=-1pt]current page.south west) (rightblock) {};
+      \node[anchor=center, yshift=0.5pt, font=\tiny, text=white] at (leftblock.center)
+           {戴一冕 https://grokcv.site/};
+      \node[anchor=center, yshift=0.5pt, font=\tiny, text=white] at (midblock.center)
+           {大规模图像的多粒度目标检测};
+      \node[anchor=center, yshift=0.5pt, font=\tiny, text=white] at (rightblock.center)
+           {\insertframenumber};
+    \end{tikzpicture}%
+  \fi
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 注释宏定义
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcounter{cornernotecounter}
+
+% 修复跨页污染：每次进入新的 frame 时计数器清零
+% (需要 \usepackage{etoolbox}，你前面的配置里已经加了)
+\BeforeBeginEnvironment{frame}{\setcounter{cornernotecounter}{0}}
+
+\newcommand{\cornernote}[1]{%
+  \begin{tikzpicture}[remember picture, overlay]
+    % 核心修复：根据当前计数器的值，动态计算 Y 轴高度。
+    % 基础高度 0.45cm，每多一个注脚，整体向上偏移 0.35cm，防止文字重叠
+    \node[anchor=south west, xshift=0.6cm, yshift={0.45cm + (\value{cornernotecounter}-1)*0.3cm}] 
+      at (current page.south west) {%
+      {\scriptsize\color{gray}\textsuperscript{\thecornernotecounter} #1}%
+    };
+  \end{tikzpicture}%
+}
+
+\newcommand{\cornerfootnote}[1]{%
+  \stepcounter{cornernotecounter}% 删除了致命的空行
+  \textsuperscript{\thecornernotecounter}%
+  \cornernote{#1}%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 表格样式宏定义
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\PlainTable}[1]{%
+  {\footnotesize
+   \setlength{\tabcolsep}{6pt}%
+   #1%
+  }%
+}
+\newcommand{\ThreeLineTable}[1]{%
+  {\footnotesize
+   \setlength{\tabcolsep}{6pt}%
+   #1%
+  }%
+}
+\newcommand{\AltColorTable}[1]{%
+  {\footnotesize
+   \setlength{\tabcolsep}{6pt}%
+   \rowcolors{2}{gray!20}{white}%
+   #1%
+   \rowcolors{2}{}{}%
+  }%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%强调块（适用于公式等）
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 定义参数 key 和默认值
+\pgfkeys{
+  /BehindEqBox/.is family, /BehindEqBox,
+  color/.initial = midpurple,
+  border/.initial = 1pt,
+  style/.initial = solid,
+  padding/.initial = 2.8mm
+}
+
+% 定义命令：支持键值对参数 + 内容
+\NewDocumentCommand{\BehindEqBox}{O{} m}{%
+  % 加载参数
+  \pgfkeys{/BehindEqBox, #1}
+
+  \vspace{1em}
+  \begin{center}
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[inner sep=\pgfkeysvalueof{/BehindEqBox/padding}] (E) {#2};
+
+      \coordinate (A) at ([xshift=-25pt]E.south west);
+      \coordinate (B) at ([xshift=25pt]E.north east);
+
+      \begin{pgfonlayer}{background}
+        \filldraw[fill=\pgfkeysvalueof{/BehindEqBox/color}, opacity=0.1, rounded corners=0.35cm]
+          (A) rectangle (B);
+
+        \draw[
+          line width=\pgfkeysvalueof{/BehindEqBox/border},
+          draw=\pgfkeysvalueof{/BehindEqBox/color},
+          opacity=0.2,
+          rounded corners=0.35cm,
+          \pgfkeysvalueof{/BehindEqBox/style}
+        ] 
+        (A) rectangle (B);
+      \end{pgfonlayer}
+    \end{tikzpicture}
+  \end{center}
+  \vspace{1em}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%字体高亮块
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 替换原 block 环境
+\newtcolorbox{beamerblockbox}[3][]{%
+  enhanced,
+  breakable,
+  colback=#2!10,             % 内容背景（透明度 80%）
+  colframe=#2,               % 框颜色 = 标题栏颜色
+  coltitle=white,            % 标题文字颜色
+  fonttitle=\large,
+  title=#3,
+  boxed title style={
+    colback=#2,
+    top=2pt, bottom=2pt,
+    left=2pt, right=2pt,
+    sharp corners=northwest,
+    sharp corners=northeast,
+  },
+  boxrule=0pt,
+  arc=1.5mm,
+  shadow={0pt}{-1pt}{1.5mm}{black!30},
+  left=2pt, right=2pt,
+  top=2pt, bottom=2pt,
+  before skip=6pt,  % block与上文之间的空隙
+  #1,
+}
+
+% 替换默认 beamer block 环境
+\let\oldblock\block
+\renewenvironment{block}[1]{\begin{beamerblockbox}{midpurple}{#1}}{\end{beamerblockbox}}
+
+\let\oldalertblock\alertblock
+\renewenvironment{alertblock}[1]{\begin{beamerblockbox}{myred}{#1}}{\end{beamerblockbox}}
+
+\let\oldexampleblock\exampleblock
+\renewenvironment{exampleblock}[1]{\begin{beamerblockbox}{myorange}{#1}}{\end{beamerblockbox}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 封面页函数
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{tikz}
+\usetikzlibrary{calc, backgrounds}
+
+\newcommand{\DrawCoverPage}{%
+\begin{frame}
+  \begin{tikzpicture}[remember picture, overlay]
+    % 横幅中心位置
+    \coordinate (bannercenter) at ([yshift=0.5cm]current page.center);
+
+    % 横幅背景（高度 3.5cm）
+    \node[fill=lightpurple, inner sep=0pt, outer sep=0pt, 
+          minimum width=\paperwidth, 
+          minimum height=3.5cm, 
+          anchor=center] (banner) at (bannercenter) {};
+
+    % 横幅上下两条线
+    \path let \p1 = (banner.north), \p2 = (banner.south) in
+      coordinate (topline) at (\x1, \y1+0.15cm)
+      coordinate (bottomline) at (\x2, \y2-0.15cm);
+
+    \draw[line width=0.4pt, draw=lightpurple] ([xshift=-0.5\paperwidth]topline) -- ([xshift=0.5\paperwidth]topline);
+    \draw[line width=0.4pt, draw=lightpurple] ([xshift=-0.5\paperwidth]bottomline) -- ([xshift=0.5\paperwidth]bottomline);
+
+    % 标题
+    \node[text=white, 
+          font=\fontsize{32}{36}\selectfont\bfseries, 
+          text width=0.9\paperwidth, 
+          align=center] at (bannercenter) {\mytitle};
+
+    % 作者信息（胶囊形外框）
+    \node[draw=lightpurple, fill=none, line width=0.5pt, 
+          rounded corners=0.4cm, % 圆角固定
+          minimum height=0.8cm,  % 高度写死
+          inner xsep=20pt,       % 左右内边距
+          text height=0.4cm,       % 保持中文英文一致高度
+          text depth=0cm,      % 调整基线
+          font=\Large] 
+          at ([yshift=-2.7cm]current page.center) {\myauthor};
+
+    % 图片部分
+    \node[anchor=north, yshift=-0.35cm, xshift=-0.15cm] 
+         at (current page.north) 
+         {\includegraphics[width=3.5cm]{image/Cover image/Logo.png}};
+
+    \node[anchor=south west, xshift=-0.5cm, yshift=-0.5cm] 
+         at (current page.south west) 
+         {\includegraphics[width=6cm]{image/Cover image/element_1.png}};
+
+    \node[anchor=south east, xshift=0.5cm, yshift=-0.5cm] 
+         at (current page.south east) 
+         {\includegraphics[width=5.5cm]{image/Cover image/element_2.png}};
+  \end{tikzpicture}
+\end{frame}
+}
+
+%使用大圆圈
+\useSmallCircleItem
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 动态自适应目录页宏定义
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{pgffor} % 引入循环支持包 (通常tikz已包含，显式引入保平安)
+
+% 定义计数器用于统计条目数量
+\newcounter{toccount}
+
+% =======================================================
+% 命令: \DrawTOC[高亮项索引]{逗号分隔的标题列表}
+% 示例: \DrawTOC[2]{背景介绍, 核心方法, 实验结果, 总结展望}
+% 默认高亮第一项。如果不希望有高亮，可以传 [0]
+% =======================================================
+\newcommand{\DrawTOC}[2][1]{%
+  \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay]
+      
+      % --- 左侧静态背景 (无需变动) ---
+      \fill[lightpurple] (current page.south west) rectangle ([xshift=3.5cm]current page.north west);
+      \fill[white, rounded corners=15pt]
+        ([xshift=1.6cm, yshift=1.5cm]current page.south west) rectangle ([xshift=1cm, yshift=-1.5cm]current page.north east);
+
+      % --- 左侧文字 ---
+      \node[anchor=center, align=center, text=lightpurple] at ([xshift=3.3cm, yshift=0cm]current page.west) {
+        {\fontsize{32}{40}\bfseries\selectfont 汇\hspace{0.1em}报} \\[0.2cm]
+        {\fontsize{32}{40}\bfseries\selectfont 提\hspace{0.1em}纲} \\[0.2cm]
+        \rule{0.8cm}{1.5pt} \\[0.2cm]
+        {\fontsize{10}{12}\bfseries\selectfont CONTENTS}
+      };
+
+      % --- 右侧动态生成排版块 ---
+      \begin{scope}[shift={([xshift=2cm, yshift=0cm]current page.center)}]
+        
+        \tikzstyle{block_base} = [minimum width=9.5cm, minimum height=1.2cm, font=\Large\bfseries\selectfont]
+        \tikzstyle{block_active} = [block_base, fill=lightpurple, text=white]
+        \tikzstyle{block_inactive} = [block_base, fill=gray!20, draw=gray!30, line width=0.5pt, text=black!60]
+
+        % 1. 统计传入的标题总数
+        \setcounter{toccount}{0}
+        \foreach \x in {#2} { \stepcounter{toccount} }
+
+        % 2. 核心数学计算：计算最顶部色块的 Y 坐标，确保整体在页面绝对居中
+        % 色块高度1.2cm + 间距0.3cm = 跨度步长 1.5cm
+        \pgfmathsetmacro{\starty}{(\thetoccount-1) * 1.6 / 2}
+
+        % 3. 循环渲染每一个块
+        \foreach \x [count=\xi] in {#2} {
+          % 根据当前索引计算 Y 坐标: curr_y = start_y - (i-1)*1.5
+          \pgfmathsetmacro{\curry}{\starty - (\xi-1)*1.6}
+          
+          % 判断是否为当前激活项
+          \ifnum\xi=#1\relax
+            \node[block_active]   at (0, \curry) {\x};
+          \else
+            \node[block_inactive] at (0, \curry) {\x};
+          \fi
+        }
+        
+      \end{scope}
+    \end{tikzpicture}
+  \end{frame}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 动态自适应目录页宏定义 - 极简列表版 (适应长标题与多条目)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% =======================================================
+% 命令: \DrawListTOC[高亮项索引]{逗号分隔的标题列表}
+% 示例: \DrawListTOC[2]{第一项, 这是一个非常长的第二项标题会自动换行, 第三项}
+% =======================================================
+\newcommand{\DrawListTOC}[2][1]{%
+  \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay]
+      
+      % --- 左侧静态背景与文本 (保持品牌视觉一致) ---
+      \fill[lightpurple] (current page.south west) rectangle ([xshift=3.5cm]current page.north west);
+      \fill[white, rounded corners=15pt]
+        ([xshift=1.6cm, yshift=1.5cm]current page.south west) rectangle ([xshift=1cm, yshift=-1.5cm]current page.north east);
+
+      \node[anchor=center, align=center, text=lightpurple] at ([xshift=3.3cm, yshift=0cm]current page.west) {
+        {\fontsize{32}{40}\bfseries\selectfont 汇\hspace{0.1em}报} \\[0.2cm]
+        {\fontsize{32}{40}\bfseries\selectfont 提\hspace{0.1em}纲} \\[0.2cm]
+        \rule{0.8cm}{1.5pt} \\[0.2cm]
+        {\fontsize{10}{12}\bfseries\selectfont CONTENTS}
+      };
+
+      % --- 右侧自适应列表排版 ---
+      \begin{scope}[shift={([xshift=-1.5cm, yshift=0cm]current page.center)}]
+        
+        % 统计条目总数
+        \setcounter{toccount}{0}
+        \foreach \x in {#2} { \stepcounter{toccount} }
+
+        % 计算起始 Y 坐标
+        % 步长拉大到 1.8cm，为长标题自动换行预留充足的垂直呼吸空间
+        \pgfmathsetmacro{\starty}{(\thetoccount-1) * 1.5 / 2}
+
+        \foreach \x [count=\xi] in {#2} {
+          \pgfmathsetmacro{\curry}{\starty - (\xi-1)*1.5}
+          
+          % 渲染逻辑：序号 + 竖线分隔符 + 文本
+          \ifnum\xi=#1\relax
+            % --- 当前高亮项 ---
+            % 1. 序号 (不足10补0)
+            \node[font=\Large\bfseries, text=lightpurple, anchor=east] at (-0.2, \curry) {\ifnum\xi<10 0\xi\else\xi\fi};
+            % 2. 纵向引导线
+            \draw[lightpurple, line width=1.5pt] (0.1, \curry+0.4) -- (0.1, \curry-0.4);
+            % 3. 文本 (设定 text width=9.5cm，超过该宽度自动向下方折行，左对齐)
+            \node[font=\Large\bfseries, text=black, align=left, text width=8cm, anchor=west] at (0.4, \curry) {\x};
+          \else
+            % --- 未激活项 ---
+            % 1. 弱化序号
+            \node[font=\Large\bfseries, text=gray!40, anchor=east] at (-0.2, \curry) {\ifnum\xi<10 0\xi\else\xi\fi};
+            % 2. 弱化纵向线
+            \draw[gray!30, line width=1pt] (0.1, \curry+0.4) -- (0.1, \curry-0.4);
+            % 3. 弱化文本 (降低字重为常规，改变颜色)
+            \node[font=\Large, text=gray!60, align=left, text width=9.5cm, anchor=west] at (0.4, \curry) {\x};
+          \fi
+        }
+        
+      \end{scope}
+    \end{tikzpicture}
+  \end{frame}
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 参考文献样式
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% 设置参考文献条目的颜色
+\setbeamercolor{bibliography item}{fg=lightpurple}
+\setbeamercolor{bibliography entry author}{fg=black}
+\setbeamercolor{bibliography entry title}{fg=black}
+\setbeamercolor{bibliography entry location}{fg=gray}
+\setbeamercolor{bibliography entry note}{fg=gray}
+
+% 修改参考文献图标（默认是难看的小信封/小书本）
+% 选项：text（显示数字）, item（显示小图标）, circle, square
+\setbeamertemplate{bibliography item}[text]

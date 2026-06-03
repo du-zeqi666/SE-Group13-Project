@@ -1,0 +1,574 @@
+% !TEX program = xelatex
+\documentclass[aspectratio=169]{beamer}
+\input{config.tex}
+
+% ============================================================
+% 字体风格：适配 Windows 系统
+% ============================================================
+\SetENFont{Arial}
+\SetCNFont{微软雅黑}
+\SetMathFontConfig{TeX Gyre Termes Math}
+
+% ============================================================
+% 封面信息
+% ============================================================
+\newcommand{\mytitle}{面向单细胞数据的 ANN 检索系统}
+\newcommand{\myauthor}{软件工程 第13组}
+
+% ============================================================
+% 页脚：项目信息
+% ============================================================
+\setbeamertemplate{footline}{%
+  \ifnum\insertpagenumber>2
+    \begin{tikzpicture}[remember picture,overlay]
+      \node[fill=lightpurple, minimum width=0.25\paperwidth, minimum height={0.4cm+1pt}, anchor=south west]
+           at ([xshift=-1pt,yshift=-1pt]current page.south west) (leftblock) {};
+      \node[fill=midpurple, minimum width=0.55\paperwidth, minimum height={0.4cm+1pt}, anchor=south west]
+           at ([xshift=0.25\paperwidth-1pt,yshift=-1pt]current page.south west) (midblock) {};
+      \node[fill=lightpurple, minimum width={0.2\paperwidth+1pt}, minimum height={0.4cm+1pt}, anchor=south west]
+           at ([xshift=0.8\paperwidth-1pt,yshift=-1pt]current page.south west) (rightblock) {};
+      \node[anchor=center, yshift=0.5pt, font=\tiny, text=white] at (leftblock.center)
+           {软件工程 第13组};
+      \node[anchor=center, yshift=0.5pt, font=\tiny, text=white] at (midblock.center)
+           {面向单细胞数据的 ANN 检索系统——中期汇报};
+      \node[anchor=center, yshift=0.5pt, font=\tiny, text=white] at (rightblock.center)
+           {\insertframenumber};
+    \end{tikzpicture}%
+  \fi
+}
+
+\begin{document}
+
+\linespread{1.2}
+\setlength{\parskip}{0.5em plus 0.2em minus 0.1em}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 封面页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\DrawCoverPage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 目录页（4 大段）
+%   1. 项目背景与系统架构
+%   2. 核心功能实现（数据读取/向量化/ANN索引/相似检索/Top-K/距离度量）
+%   3. RAG 检索与用户权限管理（RAG + JWT + 管理员）
+%   4. 总结与后续计划
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\DrawListTOC[1]{
+  项目背景与系统架构,
+  核心功能实现,
+  RAG 检索与用户权限管理,
+  总结与后续计划
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第1页：项目背景与系统架构
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{项目背景与系统架构}
+
+\begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    \textbf{项目背景}
+    \begin{itemize}
+      \item 单细胞测序产生\textbf{数十万个细胞}样本，每个细胞是一个\textbf{高维向量}
+      \item 传统精确搜索在大规模高维数据上\textbf{效率极低}
+      \item ANN 技术在\textbf{质量与速度之间取得平衡}
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{系统目标}
+    \begin{itemize}
+      \item 全栈 Web 应用：数据上传 $\to$ 预处理 $\to$ 索引 $\to$ 检索 $\to$ 可视化
+      \item 至少实现一种 ANN 算法，支持 Top-K 相似细胞搜索
+      \item 返回完整细胞信息：名称、元数据、距离值、查询耗时
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{技术栈}
+    \ThreeLineTable{%
+      \begin{tabular}{ll}
+        \toprule
+        \textbf{层级} & \textbf{技术} \\
+        \midrule
+        前端 & React 18 + MUI 5 + Recharts \\
+        后端 & Flask 2.3 + JWT \\
+        ANN & FAISS / Annoy / ChromaDB \\
+        存储 & MySQL + 本地文件系统 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \begin{figure}
+      \centering
+      % ================================================================
+      % 【截图1】系统架构图
+      % ================================================================
+      \rule{\textwidth}{3.5cm}
+      \caption{系统整体架构图（待插入：前后端分层架构示意图）}
+
+      \vspace{0.5em}
+      % ================================================================
+      % 【截图2】Dashboard 主界面全貌
+      % ================================================================
+      \rule{\textwidth}{2.8cm}
+      \caption{Dashboard 主页（待插入：Dashboard 完整界面截图）}
+    \end{figure}
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 过渡页：核心功能实现
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\DrawTOC[2]{
+  项目背景与系统架构,
+  核心功能实现,
+  RAG 检索与用户权限管理,
+  总结与后续计划
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第2页：核心功能——单细胞数据读取与向量化表示
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{核心功能实现（1）——单细胞数据读取与向量化表示}
+
+\begin{columns}[T]
+  \begin{column}{0.42\textwidth}
+    \textbf{支持的数据格式}
+    \begin{itemize}
+      \item CSV / TSV / HDF5 / H5AD（AnnData）
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{课程数据适配}
+    \begin{itemize}
+      \item 优先读取 \texttt{obsm["X\_pca"]} 作为检索向量
+      \item \texttt{obs} 元数据作为细胞标签和过滤字段
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{数据预处理}
+    \begin{itemize}
+      \item L2 归一化（按细胞）
+      \item 按特征 z-score 标准化
+    \end{itemize}
+
+    \begin{alertblock}{$\checkmark$ 课程要求}
+      单细胞数据读取 + 数据向量化表示
+    \end{alertblock}
+  \end{column}
+
+  \begin{column}{0.55\textwidth}
+    \begin{figure}
+      \centering
+      % ================================================================
+      % 【截图3】数据上传与管理界面
+      % ================================================================
+      \rule{\textwidth}{2.5cm}
+      \caption{数据上传与管理界面（待插入：数据上传 + 数据集列表截图）}
+
+      \vspace{0.3em}
+      % ================================================================
+      % 【截图4】预处理界面
+      % ================================================================
+      \rule{\textwidth}{2.5cm}
+      \caption{数据预处理（待插入：预处理操作 + 预处理状态截图）}
+    \end{figure}
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第3页：核心功能——ANN索引构建
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{核心功能实现（2）——ANN 索引构建}
+
+\begin{columns}[T]
+  \begin{column}{0.38\textwidth}
+    \textbf{实现的 ANN 算法/检索库（4 种）}
+    \begin{itemize}
+      \item \textbf{FAISS Flat}：暴力搜索，精确结果
+      \item \textbf{FAISS IVF}：倒排索引加速
+      \item \textbf{Annoy}：随机投影树
+      \item \textbf{ChromaDB HNSW}：联合索引
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{构建参数}
+    \begin{itemize}
+      \item 索引类型可选
+      \item 距离度量可选（L2 / Cosine / IP）
+      \item Annoy n\_trees 可调
+    \end{itemize}
+
+    \begin{alertblock}{$\checkmark$ 课程要求}
+      至少实现一种 ANN 算法或检索库
+    \end{alertblock}
+  \end{column}
+
+  \begin{column}{0.58\textwidth}
+    \begin{figure}
+      \centering
+      % ================================================================
+      % 【截图5】索引构建表单
+      % ================================================================
+      \rule{\textwidth}{2.3cm}
+      \caption{索引构建表单（待插入：构建参数选择界面截图）}
+
+      \vspace{0.3em}
+      % ================================================================
+      % 【截图6】已构建索引列表
+      % ================================================================
+      \rule{\textwidth}{2.3cm}
+      \caption{索引列表（待插入：已构建索引列表截图，展示4种算法条目）}
+    \end{figure}
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第4页：核心功能——相似细胞检索与Top-K结果
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{核心功能实现（3）——相似细胞检索与 Top-K 结果}
+
+\begin{columns}[T]
+  \begin{column}{0.50\textwidth}
+    \textbf{三种检索方式}
+    \begin{itemize}
+      \item \textbf{向量检索}：直接输入数值向量
+      \item \textbf{按细胞 ID 检索}：以数据集中的某细胞为查询
+      \item \textbf{自然语言检索}：RAG 驱动的 AI 搜索
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{检索参数与返回信息}
+    \begin{itemize}
+      \item \textbf{Top-K}：1--1000 可调
+      \item \textbf{距离度量}：L2 / Cosine / Inner Product
+      \item \textbf{元数据过滤}：cell\_type、disease、AgeGroup、donor\_id
+      \item \textbf{返回}：细胞名称、排序序号、距离值、全部元数据、查询耗时(ms)
+    \end{itemize}
+
+    \begin{alertblock}{$\checkmark$ 课程要求}
+      相似细胞检索 + Top-K 搜索 + 返回对应细胞信息
+    \end{alertblock}
+  \end{column}
+
+  \begin{column}{0.47\textwidth}
+    \begin{figure}
+      \centering
+      % ================================================================
+      % 【截图7】搜索面板（检索参数输入界面）
+      % ================================================================
+      \rule{\textwidth}{2.3cm}
+      \caption{搜索面板（待插入：检索参数输入界面完整截图）}
+
+      \vspace{0.3em}
+      % ================================================================
+      % 【截图8】检索结果表格 + 距离分布柱状图
+      % ================================================================
+      \rule{\textwidth}{2.3cm}
+      \caption{检索结果展示（待插入：Top-K结果表格 + 距离分布图截图）}
+    \end{figure}
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第5页：界面功能总览（6 张界面截图一览）
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{界面功能总览}
+
+\begin{figure}
+  \centering
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    % ================================================================
+    % 【截图9】数据管理界面
+    % ================================================================
+    \rule{\textwidth}{2.2cm}
+    \caption{数据管理界面}
+  \end{minipage}\hfill
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    % ================================================================
+    % 【截图10】索引管理界面
+    % ================================================================
+    \rule{\textwidth}{2.2cm}
+    \caption{索引管理界面}
+  \end{minipage}\hfill
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    % ================================================================
+    % 【截图11】搜索与结果界面
+    % ================================================================
+    \rule{\textwidth}{2.2cm}
+    \caption{搜索与结果界面}
+  \end{minipage}
+\end{figure}
+
+\vspace{-0.3em}
+\begin{figure}
+  \centering
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    % ================================================================
+    % 【截图12】AI 智能检索界面
+    % ================================================================
+    \rule{\textwidth}{2.2cm}
+    \caption{AI 智能检索界面}
+  \end{minipage}\hfill
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    % ================================================================
+    % 【截图13】联合索引管理界面
+    % ================================================================
+    \rule{\textwidth}{2.2cm}
+    \caption{联合索引管理界面}
+  \end{minipage}\hfill
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    % ================================================================
+    % 【截图14】个人资料管理界面
+    % ================================================================
+    \rule{\textwidth}{2.2cm}
+    \caption{个人资料管理界面}
+  \end{minipage}
+\end{figure}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第6页：三种距离度量方式与项目统计（归入核心功能部分）
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{三种距离度量方式与项目统计}
+
+\textbf{系统支持三种距离度量，构建索引时选定，搜索时锁定。}
+
+\vspace{0.3em}
+\ThreeLineTable{%
+  \begin{tabular}{p{2.5cm} p{4cm} p{4cm} p{3cm}}
+    \toprule
+    \textbf{度量方式} & \textbf{数学含义} & \textbf{实现细节} & \textbf{选用建议} \\
+    \midrule
+    L2 (Euclidean)
+    & $\sqrt{\sum_i(A_i-B_i)^2}$，空间直线距离
+    & FAISS IndexFlatL2，Annoy euclidean
+    & 数值归一化后 \\
+    \hline
+    Cosine
+    & $\frac{A\cdot B}{|A||B|}$，方向夹角
+    & L2归一化 + FAISS IndexFlatIP，Annoy angular
+    & $\checkmark$ \textbf{推荐}：不受表达量影响 \\
+    \hline
+    Inner Product
+    & $\sum_i A_i B_i$，点积大小
+    & FAISS IndexFlatIP / METRIC\_INNER\_PRODUCT，Annoy dot
+    & 有语义的内积场景 \\
+    \bottomrule
+  \end{tabular}
+}
+
+\vspace{0.3em}
+\begin{columns}[T]
+  \begin{column}{0.50\textwidth}
+    \begin{block}{为什么 Cosine 是单细胞分析的默认选择？}
+      基因表达量受测序深度影响大，余弦相似度关心\textbf{基因相对表达模式的方向相似性}，不受总量影响。
+      L2 归一化后 Cosine $\equiv$ Inner Product。
+    \end{block}
+  \end{column}
+  \begin{column}{0.46\textwidth}
+    \centering
+    \footnotesize
+    \ThreeLineTable{%
+      \begin{tabular}{lr}
+        \toprule
+        \textbf{模块} & \textbf{数量} \\
+        \midrule
+        API 端点 & 25+ \\
+        前端页面/组件 & 7 + 13 \\
+        ANN 算法/库 & 4 种 \\
+        距离度量 & 3 种 \\
+        数据格式 & 4 种 \\
+        i18n 语言 & 中/英 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 过渡页：RAG 检索与用户权限管理
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\DrawTOC[3]{
+  项目背景与系统架构,
+  核心功能实现,
+  RAG 检索与用户权限管理,
+  总结与后续计划
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第7页：RAG 自然语言检索与联合索引
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{RAG 自然语言检索与联合索引}
+
+\begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    \textbf{RAG 智能检索流程}
+    \begin{enumerate}
+      \item 用户输入自然语言（如"找与肝癌细胞相似的 T 细胞"）
+      \item Sentence-Transformers 编码查询语义
+      \item 自动提取元数据过滤条件（cell\_type、disease 等）
+      \item ChromaDB HNSW 语义相似搜索
+      \item AI 对 Top-K 结果统计分析并生成自然语言解读
+    \end{enumerate}
+
+    \vspace{0.3em}
+    \textbf{联合索引（Joint Index）}
+    \begin{itemize}
+      \item ChromaDB 多数据集合并索引，支持\textbf{跨数据集检索}
+      \item 独立管理界面，含构建、查询、列表、删除功能
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \begin{figure}
+      \centering
+      % ================================================================
+      % 【截图15】RAG 自然语言搜索（大图）
+      % ================================================================
+      \rule{\textwidth}{3cm}
+      \caption{RAG 自然语言检索（待插入：AI搜索输入+结果+分析截图）}
+
+      \vspace{0.3em}
+      % ================================================================
+      % 【截图16】联合索引构建与查询界面
+      % ================================================================
+      \rule{\textwidth}{2.5cm}
+      \caption{联合索引管理（待插入：联合索引构建与查询截图）}
+    \end{figure}
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第8页：用户认证与权限管理
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{用户认证与权限管理}
+
+\begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    \textbf{用户认证（JWT）}
+    \begin{itemize}
+      \item 注册 + 登录，返回 JWT access token
+      \item 所有 API 受 \texttt{@jwt\_required()} 保护
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{个人账户（Profile）}
+    \begin{itemize}
+      \item 修改用户名、邮箱（需验证唯一性）
+      \item 修改密码（需验证旧密码）
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{管理员功能（Admin）}
+    \begin{itemize}
+      \item 查看所有普通用户列表
+      \item 创建 / 编辑 / 删除用户、重置密码
+      \item 管理员账户通过 \texttt{.env} 自动初始化
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \begin{figure}
+      \centering
+      % ================================================================
+      % 【截图17】登录/注册页面
+      % ================================================================
+      \rule{\textwidth}{2.3cm}
+      \caption{登录/注册界面（待插入：Auth 页面截图）}
+
+      \vspace{0.3em}
+      % ================================================================
+      % 【截图18】管理员用户管理页面
+      % ================================================================
+      \rule{\textwidth}{2.3cm}
+      \caption{管理员用户管理（待插入：Admin Users 页面截图）}
+    \end{figure}
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 过渡页：总结与后续计划
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\DrawTOC[4]{
+  项目背景与系统架构,
+  核心功能实现,
+  RAG 检索与用户权限管理,
+  总结与后续计划
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第9页：总结与后续计划
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{总结与后续计划}
+
+\begin{block}{中期已完成的核心工作}
+  \begin{itemize}
+    \item \textbf{完整功能闭环}：数据上传 $\to$ 预处理 $\to$ ANN 索引构建 $\to$ 相似检索 $\to$ 结果可视化
+    \item \textbf{ANN 算法覆盖}：实现 4 种 ANN 算法/检索库（FAISS Flat、FAISS IVF、Annoy、ChromaDB HNSW）
+    \item \textbf{Top-K 检索}：支持向量检索/按细胞ID检索/RAG自然语言检索，返回完整细胞信息与元数据
+    \item \textbf{全部课程要求覆盖}：单细胞数据读取、向量化表示、ANN索引构建、相似细胞检索、$\geq$1种ANN算法、Top-K+返回细胞信息
+    \item \textbf{距离度量}：支持 L2 / Cosine / Inner Product 三种度量，Cosine 为单细胞分析的推荐默认值
+    \item \textbf{附加功能}：用户认证(JWT)、管理员系统、RAG检索、联合索引、中英文切换、搜索历史管理
+  \end{itemize}
+\end{block}
+
+\vspace{0.5em}
+\begin{exampleblock}{后续计划}
+  \begin{itemize}
+    \item \textbf{性能评测}：添加 Recall@K 等 ANN 检索质量指标的量化评测
+    \item \textbf{大规模测试}：使用课程 liver 数据集进行完整流程压力验证
+    \item \textbf{文档完善}：整理用户手册、测试报告、部署文档
+    \item \textbf{结项准备}：准备结项报告和项目演示视频
+  \end{itemize}
+\end{exampleblock}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Q&A 页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{提问与解答}
+  \centering
+  \vspace{0.8cm}
+  {\Huge {\bfseries Q\&A} \\
+  \vspace{0.25em} \Large 感谢聆听，欢迎提问}
+
+  \vspace{1.5cm}
+  \normalsize 软件工程 第13组
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 致谢页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[fill=midpurple, opacity=1, minimum width=\paperwidth, minimum height=\paperheight] at (current page.center) {};
+    \node[font=\fontsize{40}{70}\selectfont\bfseries, text=white] at (current page.center) {致谢};
+  \end{tikzpicture}
+\end{frame}
+
+\end{document}

@@ -1,0 +1,294 @@
+\documentclass[aspectratio=169]{beamer}
+\input{config.tex} % 导入配置文件
+
+\ThemeBlackSans % 全黑体 英文 Liberation Sans，中文思源黑体
+
+% \ThemeSongRoman % 学术风 英文 Times New Roman，中文思源宋体
+
+% \UseHeiRomanFont % 混合风 英文 Times New Roman，中文思源黑体
+
+
+\begin{document}
+
+\linespread{1.2}   % 行距，这里设置的是1.2倍行距
+\setlength{\parskip}{0.5em plus 0.2em minus 0.1em}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%封面页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\mytitle}{媒体计算实验室}
+\newcommand{\myauthor}{Your Name}
+
+% 绘制封面
+\DrawCoverPage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 目录页示例
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 示例1：默认高亮第 1 项
+\DrawTOC{项目背景介绍, 核心模块设计, 基础数据测试, 总结与未来计划}
+
+% 示例2：作为过渡页，高亮第 2 项
+\DrawTOC[2]{项目背景介绍, 核心模块设计, 基础数据测试, 总结与未来计划}
+
+% 示例3：使用列表样式，高亮第 2 项
+
+\DrawListTOC[2]{
+  绪论与项目背景分析, 
+  基于基础组件的系统核心架构设计, 
+  消融实验与主流方案性能对比, 
+  总结与未来工作规划
+}
+
+% ... 开始写你具体的 frame ...
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 列表与三线表页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{核心架构参数对比}
+  \begin{itemize}
+    \item 应用场景：基础分类测试
+      \begin{itemize}
+        \item 测试平台：通用评估框架
+      \end{itemize}
+  \end{itemize}
+  % \vspace{0.5em}
+  \centering
+  \ThreeLineTable{%
+    \begin{tabular}{lcccc}
+      \toprule
+      \textbf{主干网络}      & \textbf{参数量} & \textbf{计算量} & \textbf{Top-1 错误率} & \textbf{Top-5 错误率} \\
+      \midrule
+      基础模型-A           & 44.6 M  & 7.8  & 22.63\% & 6.44\% \\
+      基础模型-B           & 83.5 M  & 15.5 & 20.40\% & --   \\
+      进阶模型-C           & 77.5 M  & 16.1 & 20.70\% & 5.50\% \\
+      轻量模型-D           & 25.2 M  & 4.5  & 19.73\% & 4.96\% \\
+      \bottomrule
+    \end{tabular}
+  }
+  \vspace*{3em}  % 微调视觉中心
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 图文并排列表页 (带首字母缩写设计)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{\textcolor{midpurple}{D}\textcolor{myred}{O}\textcolor{mygreen}{C}\textcolor{mypurple}{X} 核心理念}
+    \begin{itemize}
+      \item \textcolor{midpurple}{D}ata (数据): 强调数据驱动的基础
+      \item \textcolor{myred}{O}pen (开放): 保持接口与协议的开放性
+      \item \textcolor{mygreen}{C}ollaboration (协作): 促进多模块协同
+      \item e\textcolor{mypurple}{X}plore (探索): 持续探索未知场景
+    \end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 单图展示页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{单图全屏展示}
+
+以下是图片展示\cornerfootnote{注：这是一个注脚示例}：
+%注脚功能
+  \vspace{-0.7em} 
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.55\textwidth]{image/demo.jpg}
+    \caption[这是一个示意图]{这是一个示意图}
+  \end{figure}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 双栏排版页 (左文右图 / 左右对比)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{双栏对比结构}
+  \begin{columns}[T] % T 代表顶部对齐，c 代表居中对齐
+    \begin{column}{0.48\textwidth}
+      \textbf{左侧：核心机制分析}
+      \begin{itemize}
+        \item 机制 A 的局限性
+        \item 现有方案的资源消耗瓶颈
+        \item 我们的改进思路
+      \end{itemize}
+      \vspace{1em}
+      由此可见，优化前端数据流是关键。
+    \end{column}
+    
+    \begin{column}{0.48\textwidth}
+      \textbf{右侧：架构对比示意}
+      \begin{figure}
+        \centering
+        % \includegraphics[width=\textwidth]{image/compare.pdf}
+        \rule{\textwidth}{3cm} % 占位符
+        \caption{新旧架构对比}
+      \end{figure}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 多图并排展示页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{多维度实验结果对比}
+  \begin{figure}
+    \centering
+    \begin{minipage}{0.31\textwidth}
+      \centering
+      \rule{\textwidth}{2cm} % 替换为 \includegraphics
+      \caption{输入图像}
+    \end{minipage}\hfill
+    \begin{minipage}{0.31\textwidth}
+      \centering
+      \rule{\textwidth}{2cm}
+      \caption{Baseline 结果}
+    \end{minipage}\hfill
+    \begin{minipage}{0.31\textwidth}
+      \centering
+      \rule{\textwidth}{2cm}
+      \caption{Ours 结果}
+    \end{minipage}
+  \end{figure}
+  
+  \vspace{0.5em}
+  \textbf{结论：} 本文方法在边缘保留和纹理恢复上显著优于基线模型。
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 算法伪代码页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]{核心算法逻辑：小批量梯度下降}
+  % 注意：[H] 参数极其重要，Beamer 不支持 algorithm 的自动浮动机制
+  \begin{algorithm}[H]
+    \caption{Mini-Batch Gradient Descent}
+    \SetAlgoLined
+    
+    \KwIn{原始数据集 $\mathcal{D}$, 学习率 $\eta$, 迭代次数 $T$, 批次大小 $B$}
+    \KwOut{优化后的模型权重 $W_T$}
+    
+    初始化权重 $W_0 \sim \mathcal{N}(0, \sigma^2)$\;
+    
+    \For{$t = 1$ \KwTo $T$}{
+      从 $\mathcal{D}$ 中均匀无放回采样 $B$ 个样本，构成小批量 $\mathcal{B}_t$\;
+      计算该批次的平均经验损失：
+      $L_{\mathcal{B}_t} = \frac{1}{B} \sum_{x_i \in \mathcal{B}_t} \ell(f(x_i; W_{t-1}), y_i)$\;
+      反向传播，计算梯度：$g_t = \nabla_{W} L_{\mathcal{B}_t}$\;
+      更新模型权重：$W_t \leftarrow W_{t-1} - \eta g_t$\;
+    }
+    \Return $W_T$\;
+  \end{algorithm}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 公式推导与变量解释页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{年度综合绩效评估模型}
+  核心公式解析：
+
+  \vspace{1em}
+
+  \begin{center}
+    \BehindEqBox{
+      $\displaystyle
+      S = \underbrace{\sum_{i=1}^{N} \textcolor{myorange}{w_i}\, \textcolor{mygreen}{s_i}}_{\textcolor{midpurple}{\textbf{基础得分}}} \;+\;
+      \overbrace{\left( {\frac{1}{N} \sum_{j=1}^{M} \textcolor{myred}{\delta_j}} \right)}^{\textcolor{mypurple}{\textbf{环境调节因子}}}
+      $
+    }
+  \end{center}
+
+  \vspace{1em}
+
+  % 解释公式变量
+  \[
+    \left\{
+    \begin{aligned}
+      \textcolor{mygreen}{s_i} &\;=\; \text{模块 } i \text{ 的标准化评分}, \\
+      \textcolor{myorange}{w_i} &\;=\; \text{模块 } i \text{ 的权重系数}, \\
+      \textcolor{myred}{\delta_j} &\;=\; \text{外部因素 } j \text{ 带来的修正值}.
+    \end{aligned}
+    \right.
+  \]
+
+  % \vspace{0.5em}
+
+  \textbf{说明：} 此处 \(S\) 代表年度综合评估指标。其中 \textcolor{midpurple}{基础得分} 是各模块标准化评分 \(s_i\) 的加权总和，而 \textcolor{mypurple}{环境调节因子} 则用于衡量外部影响的平均修正。
+
+\end{frame}
+
+% 另一种配置说明 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{带自定义边框的公式示例}
+  \textbf{用法示例：} 配置项：背景色 = \texttt{mypurple}，边框宽度 = 1pt，虚线样式。
+  % \vspace{1em}
+
+  \begin{center}
+    \BehindEqBox[color=mypurple, style=dashed, border=1pt]{$\displaystyle \int_{0}^{1} x^2\,dx = \frac{1}{3}$}
+  \end{center}
+
+  \vspace{1em}
+
+  \textbf{说明：} 上述公式计算了函数 \(x^2\) 在区间 \([0,1]\) 上的定积分，代表曲线下方的面积。
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 文字强调块
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{不同类型的文字强调块}
+在本页中，重要概念将被 \alert{高亮显示}，以引起观众注意。请谨慎使用以免造成视觉疲劳。
+
+\vspace{0.5em}
+\begin{block}{常规信息 (Information Block)}
+这是一个用于展示一般补充说明或背景信息的常规区块。
+\end{block}
+
+\vspace{0.5em}
+\begin{alertblock}{警告提示 (Warning)}
+这是一个红色的警告区块，通常用于强调风险、注意事项或严重错误。
+\end{alertblock}
+
+\vspace{0.5em}
+\begin{exampleblock}{核心要点 (Key Takeaways)}
+这是一个绿色的要点区块。此处用于总结本节的核心结论或重要成果。
+\end{exampleblock}
+
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 参考文献页
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{参考文献}
+\nocite{*}
+% \begin{frame}[allowframebreaks]{参考文献} % 一页放不下用这个，会自动标号
+  % allowframebreaks 允许参考文献过多时自动分页
+  \footnotesize
+  \bibliographystyle{ieeetr}
+  \bibliography{references} % 链接你的 .bib 文件
+  
+  % 手动排版示例
+  % \begin{thebibliography}{99}
+  %   \bibitem{resnet} He, K., Zhang, X., Ren, S., \& Sun, J. (2016). Deep residual learning for image recognition. \textit{CVPR}.
+  %   \bibitem{attention} Vaswani, A., et al. (2017). Attention is all you need. \textit{NeurIPS}.
+  % \end{thebibliography}
+  
+\end{frame}
+
+% 问答页
+\begin{frame}{提问与解答}
+  \centering
+  \vspace{0.8cm}
+  {\Huge {\bfseries Q\&A} \\
+  \vspace{0.25em} \Large 感谢聆听，欢迎提问}
+\end{frame}
+
+%结束页
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture,overlay]
+    % 背景设置：使用深蓝色半透明背景
+    \node[fill=midpurple, opacity=1, minimum width=\paperwidth, minimum height=\paperheight] at (current page.center) {};
+    % THANKS 文本设置：白色大字号
+    \node[font=\fontsize{40}{70}\selectfont\bfseries, text=white] at (current page.center) {致谢};
+  \end{tikzpicture}
+\end{frame}
+\end{document}

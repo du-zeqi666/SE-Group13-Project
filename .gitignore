@@ -15,6 +15,21 @@ data/*.h5
 data/*.loom
 data/*.mtx
 
+# Office temp files
+~$*
+
+# LaTeX build artifacts (generated on compile, not needed by others)
+*.aux
+*.log
+*.out
+*.nav
+*.snm
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+
 # Node
 node_modules/
 build/
