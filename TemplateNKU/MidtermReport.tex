@@ -82,17 +82,18 @@
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 第1页：项目背景与系统架构
+% 第1页：项目背景与目标
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{frame}{项目背景与系统架构}
+\begin{frame}{项目背景与目标}
 
 \begin{columns}[T]
-  \begin{column}{0.48\textwidth}
+  \begin{column}{0.50\textwidth}
+    \fontsize{8}{10}\selectfont
     \textbf{项目背景}
     \begin{itemize}
       \item 单细胞测序产生\textbf{数十万个细胞}样本，每个细胞是一个\textbf{高维向量}
       \item 传统精确搜索在大规模高维数据上\textbf{效率极低}
-      \item ANN 技术在\textbf{质量与速度之间取得平衡}
+      \item ANN（Approximate Nearest Neighbor）技术在\textbf{质量与速度之间取得平衡}
     \end{itemize}
 
     \vspace{0.5em}
@@ -102,9 +103,33 @@
       \item 至少实现一种 ANN 算法，支持 Top-K 相似细胞搜索
       \item 返回完整细胞信息：名称、元数据、距离值、查询耗时
     \end{itemize}
+  \end{column}
 
-    \vspace{0.3em}
+  \begin{column}{0.46\textwidth}
+    \begin{figure}
+      \centering
+      % ================================================================
+      % 【截图1】系统架构图
+      % ================================================================
+      \includegraphics[width=\textwidth,keepaspectratio]{image/系统整体架构图.png}
+      \caption{系统整体架构图}
+    \end{figure}
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 第2页：系统架构与界面概览
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{系统架构与界面概览}
+
+\begin{columns}[T]
+  \begin{column}{0.46\textwidth}
+    \fontsize{8}{10}\selectfont
+    \centering
     \textbf{技术栈}
+    \vspace{0.3em}
     \ThreeLineTable{%
       \begin{tabular}{ll}
         \toprule
@@ -117,23 +142,24 @@
         \bottomrule
       \end{tabular}
     }
+
+    \vspace{0.5em}
+    \textbf{Dashboard 仪表盘说明}
+    \begin{itemize}
+      \item 右侧为系统主界面，提供\textbf{数据管理}与\textbf{索引管理}两个核心入口
+      \item 概览卡片实时显示数据集数量、索引数量及最近搜索活动
+      \item 导航栏支持中英文切换、深色/浅色主题切换
+    \end{itemize}
   \end{column}
 
-  \begin{column}{0.48\textwidth}
+  \begin{column}{0.50\textwidth}
     \begin{figure}
       \centering
       % ================================================================
-      % 【截图1】系统架构图
-      % ================================================================
-      \rule{\textwidth}{3.5cm}
-      \caption{系统整体架构图（待插入：前后端分层架构示意图）}
-
-      \vspace{0.5em}
-      % ================================================================
       % 【截图2】Dashboard 主界面
       % ================================================================
-      \rule{\textwidth}{2.8cm}
-      \caption{Dashboard 主页（待插入：Dashboard 完整界面截图）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/Dashboard 主界面.png}
+      \caption{Dashboard 主页}
     \end{figure}
   \end{column}
 \end{columns}
@@ -157,6 +183,7 @@
 
 \begin{columns}[T]
   \begin{column}{0.45\textwidth}
+    \fontsize{8}{10}\selectfont
     \textbf{支持的数据格式}
     \begin{itemize}
       \item \textbf{CSV / TSV}：通用表格格式
@@ -181,10 +208,10 @@
     \begin{figure}
       \centering
       % ================================================================
-      % 【截图3】数据上传界面 — 上传区域 + 已上传数据集列表
+      % 【截图3】数据管理界面全貌
       % ================================================================
-      \rule{\textwidth}{5.5cm}
-      \caption{数据上传与管理界面（待插入：上传区域 + 数据集列表截图）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/数据管理界面全貌.png}
+      \caption{数据管理界面全貌}
     \end{figure}
   \end{column}
 \end{columns}
@@ -198,19 +225,15 @@
 
 \begin{columns}[T]
   \begin{column}{0.45\textwidth}
+    \fontsize{8}{10}\selectfont
+    \vspace{1em}
+
     \textbf{向量化流程}
     \begin{itemize}
       \item 每个细胞 $\to$ 一个高维向量（PCA 降维后 50--100 维）
       \item 课程数据：直接使用 \texttt{obsm["X\_pca"]} 预计算 PCA 嵌入
       \item Demo 数据：随机生成可调维度的高斯分布向量
-    \end{itemize}
-
-    \vspace{0.5em}
-    \textbf{数据预处理}
-    \begin{itemize}
-      \item \textbf{L2 归一化}（按细胞）：每行缩放至单位范数
-      \item \textbf{标准化}（按特征）：每列 z-score 标准化
-      \item 预处理状态带标签显示在数据集中
+      \item 数据上传后自动解析，提取细胞名、特征名、元数据
     \end{itemize}
 
     \begin{alertblock}{$\checkmark$ 课程要求 2/6}
@@ -222,10 +245,10 @@
     \begin{figure}
       \centering
       % ================================================================
-      % 【截图4】预处理操作界面
+      % 【截图4】数据上传结果
       % ================================================================
-      \rule{\textwidth}{5.5cm}
-      \caption{数据预处理（待插入：预处理下拉菜单 + 预处理后状态标签截图）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/数据向量化结果.png}
+      \caption{数据向量化结果}
     \end{figure}
   \end{column}
 \end{columns}
@@ -233,46 +256,70 @@
 \end{frame}
 
 % ================================================================
-% 数据管理界面（独立展示页）
+% 数据预处理
 % ================================================================
-\begin{frame}{数据管理}
+\begin{frame}{数据预处理}
 
-\begin{figure}
-  \centering
-  % ================================================================
-  % 【截图5】Data Management 完整页面
-  % ================================================================
-  \rule{0.9\textwidth}{6cm}
-  \caption{数据管理界面全貌（待插入：Dashboard Data Management 完整截图\\含上传区、数据集表格、操作按钮——Upload / Preprocess / Delete）}
-\end{figure}
+\begin{columns}[T]
+  \begin{column}{0.45\textwidth}
+    \fontsize{8}{10}\selectfont
+    \textbf{两种预处理方式}
+    \begin{itemize}
+      \item \textbf{L2 归一化}（按细胞）：每行缩放至单位范数
+      \item \textbf{标准化}（按特征）：每列 z-score 标准化
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{预处理特性}
+    \begin{itemize}
+      \item 原始数据保留在 \texttt{data\_web}，预处理副本写入 \texttt{data\_pre}
+      \item 预处理后自动切换存储位置，检索与索引构建使用处理后的数据
+      \item 数据集状态标签实时更新（如 ``preprocessed (L2 normalized)''）
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.52\textwidth}
+    \begin{figure}
+      \centering
+      % ================================================================
+      % 【截图5】预处理操作界面
+      % ================================================================
+      \includegraphics[width=\textwidth,keepaspectratio]{image/数据预处理.png}
+      \caption{数据预处理}
+    \end{figure}
+  \end{column}
+\end{columns}
 
 \end{frame}
 
 % ================================================================
-% 课程要求 3+5/6：ANN 索引构建（至少一种 ANN 算法）
+% 课程要求 3/6：ANN 索引构建
 % ================================================================
 \begin{frame}{ANN 索引构建}
 
 \begin{columns}[T]
   \begin{column}{0.42\textwidth}
-    \textbf{实现的 ANN 算法/检索库}
-    \begin{itemize}
-      \item \textbf{FAISS Flat}：暴力搜索，100\% 精确
-      \item \textbf{FAISS IVF}：倒排索引，nlist 自动计算
-      \item \textbf{Annoy}：随机投影树，n\_trees 可调
-      \item \textbf{ChromaDB HNSW}：分层可导航小世界图
-    \end{itemize}
+    \fontsize{8}{10}\selectfont
+    \vspace{1.2em}
 
-    \vspace{0.5em}
-    \textbf{构建参数}
+    \textbf{构建流程}
     \begin{itemize}
-      \item 选择数据集 + 索引类型
-      \item 选择距离度量（L2 / Cosine / IP）
+      \item 选择已上传的数据集
+      \item 选择索引类型：FAISS Flat、FAISS IVF、Annoy
+      \item 选择距离度量：L2 / Cosine / Inner Product
       \item 一键构建，自动保存到磁盘
     \end{itemize}
 
-    \begin{alertblock}{$\checkmark$ 课程要求 3/6 \& 5/6}
-      ANN 索引构建 \quad+\quad 至少实现一种 ANN 算法或检索库（4 种）
+    \vspace{0.5em}
+    \textbf{索引管理}
+    \begin{itemize}
+      \item 索引列表展示：类型、度量、细胞数、特征数、构建耗时
+      \item 支持查看详情、删除索引
+      \item 索引文件保存在 \texttt{backend/storage/indices/}
+    \end{itemize}
+
+    \begin{alertblock}{$\checkmark$ 课程要求 3/6}
+      ANN 索引构建
     \end{alertblock}
   \end{column}
 
@@ -282,27 +329,11 @@
       % ================================================================
       % 【截图6】索引构建表单
       % ================================================================
-      \rule{\textwidth}{5.5cm}
-      \caption{索引构建界面（待插入：数据集选择 + 索引类型 + 度量方式 + n\_trees 表单截图）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/索引构件界面.png}
+      \caption{索引构建界面}
     \end{figure}
   \end{column}
 \end{columns}
-
-\end{frame}
-
-% ================================================================
-% 索引管理
-% ================================================================
-\begin{frame}{索引管理}
-
-\begin{figure}
-  \centering
-  % ================================================================
-  % 【截图7】索引列表
-  % ================================================================
-  \rule{0.85\textwidth}{6cm}
-  \caption{ANN 索引列表（待插入：已构建索引表格完整截图\\含 index\_type、metric、n\_cells、n\_features、build\_time 等列）}
-\end{figure}
 
 \end{frame}
 
@@ -311,31 +342,38 @@
 % ================================================================
 \begin{frame}{联合索引管理}
 
-\begin{figure}
-  \centering
-  \begin{minipage}{0.48\textwidth}
-    \centering
-    % ================================================================
-    % 【截图8】联合索引构建与列表
-    % ================================================================
-    \rule{\textwidth}{3cm}
-    \caption{联合索引构建与列表（待插入：Joint Index 构建表单 + 索引列表截图）}
-  \end{minipage}\hfill
-  \begin{minipage}{0.48\textwidth}
-    \centering
-    % ================================================================
-    % 【截图9】联合索引查询结果
-    % ================================================================
-    \rule{\textwidth}{3cm}
-    \caption{联合索引跨数据集检索（待插入：Joint Index 查询结果截图）}
-  \end{minipage}
-\end{figure}
+\begin{columns}[T]
+  \begin{column}{0.42\textwidth}
+    \fontsize{8}{10}\selectfont
+    \vspace{1.5em}
 
-\vspace{0.5em}
-\begin{itemize}
-  \item 基于 ChromaDB，支持\textbf{多数据集合并索引}与跨数据集检索
-  \item 独立管理界面：构建表单、索引列表、自然语言查询、结果展示
-\end{itemize}
+    \textbf{联合索引（Joint Index）}
+    \begin{itemize}
+      \item 基于 \textbf{ChromaDB HNSW}，支持多数据集合并为单一索引
+      \item 跨数据集检索：一次查询，覆盖多个数据集
+      \item 构建时自动将各数据集向量写入 ChromaDB Collection
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{功能}
+    \begin{itemize}
+      \item 独立管理界面：构建表单、索引列表、删除
+      \item 支持自然语言查询（配合 RAG 模块）
+      \item 查询返回跨数据集 Top-K 结果
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.55\textwidth}
+    \begin{figure}
+      \centering
+      % ================================================================
+      % 【截图7】联合索引管理
+      % ================================================================
+      \includegraphics[width=\textwidth,keepaspectratio]{image/联合索引管理界面.png}
+      \caption{联合索引管理界面}
+    \end{figure}
+  \end{column}
+\end{columns}
 
 \end{frame}
 
@@ -346,6 +384,7 @@
 
 \begin{columns}[T]
   \begin{column}{0.42\textwidth}
+    \fontsize{8}{10}\selectfont
     \textbf{三种检索方式}
     \begin{itemize}
       \item \textbf{向量检索}：直接输入数值向量
@@ -370,52 +409,103 @@
     \begin{figure}
       \centering
       % ================================================================
-      % 【截图10】搜索面板
+      % 【截图8】搜索面板
       % ================================================================
-      \rule{\textwidth}{5.5cm}
-      \caption{搜索面板（待插入：索引选择 + 向量输入/细胞ID + k + 过滤条件截图）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/搜索面板.png}
+      \caption{搜索面板}
     \end{figure}
   \end{column}
 \end{columns}
+
+\end{frame}
+
+% ================================================================
+% 课程要求 5/6：至少实现一种 ANN 算法或检索库
+% ================================================================
+\begin{frame}{实现的 ANN 算法与检索库}
+\fontsize{8}{10}\selectfont
+
+\vspace{0.3em}
+\textbf{系统实现了 3 种 ANN 索引类型 + 1 种联合索引引擎，覆盖主流方案：}
+
+\vspace{0.3em}
+\begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    \textbf{FAISS Flat（Facebook AI Similarity Search）}
+    \begin{itemize}
+      \item 暴力搜索，遍历全部向量，返回\textbf{精确 Top-K}
+      \item 适合小规模数据集（<10 万细胞），100\% 召回率
+      \item 底层 C++ 实现，单机 CPU 即可运行
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{ChromaDB HNSW（联合索引引擎）}
+    \begin{itemize}
+      \item 分层可导航小世界图（HNSW），搜索复杂度 $O(\log N)$
+      \item 多数据集合并为一个 Collection，支持跨数据集检索
+      \item 配合 RAG 模块实现自然语言语义搜索
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \textbf{Annoy（Approximate Nearest Neighbors Oh Yeah）}
+    \begin{itemize}
+      \item 基于随机投影树，递归划分向量空间
+      \item n\_trees 控制索引精度（树越多越精确，构建越慢）
+      \item 内存映射加载，无需全部读入内存
+    \end{itemize}
+
+    \vspace{0.3em}
+    \textbf{FAISS IVF（Inverted File Index）}
+    \begin{itemize}
+      \item 倒排索引：先用 KMeans 聚类划分空间，搜索时仅扫描邻近聚类
+      \item nlist 参数自动计算（$\sqrt{N}$），平衡速度与精度
+      \item 适合中等至大规模数据集
+    \end{itemize}
+  \end{column}
+\end{columns}
+
+\vspace{0.3em}
+\begin{alertblock}{$\checkmark$ 课程要求 5/6}
+  至少实现一种 ANN 算法或检索库 —— 已实现 3 种 ANN 索引 + ChromaDB HNSW 联合索引
+\end{alertblock}
 
 \end{frame}
 
 % ================================================================
 % 课程要求 6/6：Top-K 相似细胞搜索，返回对应细胞信息
 % ================================================================
-\begin{frame}{Top-K 相似细胞搜索与结果展示}
+\begin{frame}{Top-K 相似细胞搜索}
 
 \begin{columns}[T]
   \begin{column}{0.42\textwidth}
-    \textbf{Top-K 搜索结果}
+    \fontsize{8}{10}\selectfont
+    \vspace{0.5em}
+
+    \textbf{Top-K 检索}
     \begin{itemize}
-      \item 返回 \textbf{Top-K} 个最相似细胞
+      \item 返回 \textbf{Top-K} 个最相似细胞（K 值 1--1000 可调）
       \item 每条结果包含：\textbf{排序序号、细胞名称、距离值、全部元数据}
-      \item 显示\textbf{查询耗时}（ms）
-      \item 支持 \textbf{CSV 导出}与搜索历史管理
+      \item 显示\textbf{查询耗时}（ms），直观反映索引性能
+      \item 支持 \textbf{CSV 一键导出}检索结果
     \end{itemize}
 
     \vspace{0.5em}
     \textbf{结果可视化}
     \begin{itemize}
-      \item Recharts \textbf{距离分布柱状图}
-      \item 当前活跃的\textbf{过滤条件标签}
-      \item 搜索历史：最近 10 条，支持单条/批量/全部删除
+      \item Recharts \textbf{距离分布柱状图}：直观对比各候选细胞距离
+      \item 当前活跃的\textbf{过滤条件标签}：实时显示 cell\_type、disease 等筛选条件
     \end{itemize}
-
-    \begin{alertblock}{$\checkmark$ 课程要求 6/6}
-      支持 Top-K 相似细胞搜索，并返回对应细胞信息
-    \end{alertblock}
   \end{column}
 
   \begin{column}{0.55\textwidth}
     \begin{figure}
       \centering
       % ================================================================
-      % 【截图11】搜索结果 + 距离分布图
+      % 【截图9】搜索结果 + 距离分布图
       % ================================================================
-      \rule{\textwidth}{5.5cm}
-      \caption{检索结果展示（待插入：Top-K 结果表格 + 距离分布柱状图截图）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/检索结果展示.png}
+      \caption{检索结果展示}
     \end{figure}
   \end{column}
 \end{columns}
@@ -423,13 +513,63 @@
 \end{frame}
 
 % ================================================================
-% 三种距离度量与项目统计
+% 搜索历史与数据导出
 % ================================================================
-\begin{frame}{三种距离度量方式与项目统计}
+\begin{frame}{搜索历史与数据导出}
 
-\textbf{系统支持三种距离度量，构建索引时选定，搜索时锁定。}
+\begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    \fontsize{8}{10}\selectfont
+    \vspace{0.5em}
+
+    \textbf{搜索历史管理}
+    \begin{itemize}
+      \item 自动保存最近 \textbf{10 条}搜索记录
+      \item 记录类型：向量检索、按细胞 ID 检索、RAG 检索
+      \item 支持\textbf{单条删除}、\textbf{批量删除}、\textbf{一键清空}
+      \item 清空需要输入确认原因，防止误操作
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{CSV 数据导出}
+    \begin{itemize}
+      \item 检索结果一键导出为 CSV 文件
+      \item 包含排名、细胞 ID、细胞名称、距离值等全部字段
+      \item 支持中英文列名（根据界面语言自动切换）
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \begin{alertblock}{$\checkmark$ 课程要求 6/6}
+      支持 Top-K 相似细胞搜索，并返回对应细胞信息
+    \end{alertblock}
+
+    \vspace{1em}
+    \textbf{完整检索链路}
+    \begin{center}
+      \footnotesize
+      选择索引 $\to$ 输入向量/细胞ID $\to$ 设置K值/过滤条件 $\to$ 发起检索 $\to$\\
+      返回Top-K结果 $\to$ 图表可视化 $\to$ CSV导出 $\to$ 记录历史
+    \end{center}
+  \end{column}
+\end{columns}
+
+\end{frame}
+
+% ================================================================
+% 三种距离度量方式
+% ================================================================
+\begin{frame}{三种距离度量方式}
+\small
 
 \vspace{0.3em}
+\begin{center}
+（系统支持三种距离度量，构建索引时选定，搜索时锁定）
+\end{center}
+
+\vspace{0.3em}
+\hspace{-1cm}
 \ThreeLineTable{%
   \begin{tabular}{p{2.5cm} p{4cm} p{4cm} p{3cm}}
     \toprule
@@ -453,31 +593,83 @@
   \end{tabular}
 }
 
+\vspace{0.5em}
+\begin{block}{为什么 Cosine 是单细胞分析的默认选择？}
+  基因表达量受测序深度影响大，余弦相似度关心\textbf{基因相对表达模式的方向相似性}，不受总量影响。
+  L2 归一化后 Cosine $\equiv$ Inner Product，因此在 FAISS 中实际用内积索引实现余弦检索。
+\end{block}
+
 \vspace{0.3em}
+\begin{itemize}
+  \item 三种度量均覆盖 FAISS Flat、FAISS IVF、Annoy 三种索引类型
+  \item 联合索引（ChromaDB HNSW）额外支持 cosine / l2 / ip 三种 space
+\end{itemize}
+
+\end{frame}
+
+% ================================================================
+% 项目统计
+% ================================================================
+\begin{frame}{项目规模统计}
+
 \begin{columns}[T]
-  \begin{column}{0.50\textwidth}
-    \begin{block}{为什么 Cosine 是单细胞分析的默认选择？}
-      基因表达量受测序深度影响大，余弦相似度关心\textbf{基因相对表达模式的方向相似性}，不受总量影响。
-      L2 归一化后 Cosine $\equiv$ Inner Product。
-    \end{block}
-  \end{column}
-  \begin{column}{0.46\textwidth}
+  \begin{column}{0.48\textwidth}
     \centering
-    \footnotesize
+    \textbf{\large 后端规模}
+
+    \vspace{0.3em}
+    \fontsize{8}{10}\selectfont
     \ThreeLineTable{%
       \begin{tabular}{lr}
         \toprule
         \textbf{模块} & \textbf{数量} \\
         \midrule
         API 端点 & 25+ \\
-        前端页面/组件 & 7 + 13 \\
-        ANN 算法/库 & 4 种 \\
+        路由蓝图 & 8 个 \\
+        ANN 索引类型 & 3 种 \\
         距离度量 & 3 种 \\
-        数据格式 & 4 种 \\
-        i18n 语言 & 中/英 \\
+        数据格式支持 & 4 种 \\
         \bottomrule
       \end{tabular}
     }
+
+    \vspace{0.5em}
+    \textbf{ANN 算法/检索库}
+    \begin{itemize}
+      \item FAISS Flat、FAISS IVF、Annoy
+      \item ChromaDB HNSW（联合索引）
+      \item 三种度量 × 三种索引 = 9 种组合
+    \end{itemize}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\large 前端规模}
+
+    \vspace{0.3em}
+    \fontsize{8}{10}\selectfont
+    \ThreeLineTable{%
+      \begin{tabular}{lr}
+        \toprule
+        \textbf{模块} & \textbf{数量} \\
+        \midrule
+        页面 & 7 个 \\
+        组件 & 13 个 \\
+        i18n 语言 & 中/英 \\
+        图表库 & Recharts \\
+        UI 框架 & Material UI 5 \\
+        \bottomrule
+      \end{tabular}
+    }
+
+    \vspace{0.5em}
+    \textbf{关键功能覆盖}
+    \begin{itemize}
+      \item 6 项课程要求全部完成
+      \item RAG 检索 + 联合索引
+      \item JWT 认证 + 管理员系统
+      \item 中英文切换 + 深色/浅色主题
+    \end{itemize}
   \end{column}
 \end{columns}
 
@@ -500,6 +692,7 @@
 
 \begin{columns}[T]
   \begin{column}{0.45\textwidth}
+    \fontsize{8}{10}\selectfont
     \textbf{RAG 自然语言检索流程}
     \begin{enumerate}
       \item 用户输入自然语言\\（如"找与肝癌细胞相似的 T 细胞"）
@@ -514,10 +707,10 @@
     \begin{figure}
       \centering
       % ================================================================
-      % 【截图12】AI 搜索面板 + 分析结果
+      % 【截图10】AI 搜索面板 + 分析结果
       % ================================================================
-      \rule{\textwidth}{5.5cm}
-      \caption{AI 智能检索（待插入：自然语言输入 + AI 分析结果截图）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/AI智能检索.png}
+      \caption{AI 智能检索}
     \end{figure}
   \end{column}
 \end{columns}
@@ -531,6 +724,7 @@
 
 \begin{columns}[T]
   \begin{column}{0.45\textwidth}
+    \fontsize{8}{10}\selectfont
     \textbf{Profile 页面功能}
     \begin{itemize}
       \item 查看与修改\textbf{用户名、邮箱}
@@ -551,10 +745,10 @@
     \begin{figure}
       \centering
       % ================================================================
-      % 【截图13】个人资料管理页面
+      % 【截图11】个人资料管理页面
       % ================================================================
-      \rule{\textwidth}{5.5cm}
-      \caption{个人资料管理（待插入：Profile 页面截图——修改信息 + 修改密码）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/个人资料管理.png}
+      \caption{个人资料管理}
     \end{figure}
   \end{column}
 \end{columns}
@@ -568,6 +762,9 @@
 
 \begin{columns}[T]
   \begin{column}{0.45\textwidth}
+    \fontsize{8}{10}\selectfont
+    \vspace{1.5em}
+
     \textbf{管理员功能（Admin）}
     \begin{itemize}
       \item 查看所有普通用户列表
@@ -588,17 +785,17 @@
     \begin{figure}
       \centering
       % ================================================================
-      % 【截图14】管理员用户管理 + 登录注册
+      % 【截图12】登录/注册界面
       % ================================================================
-      \rule{\textwidth}{2.7cm}
-      \caption{登录/注册界面（待插入：Auth 页面截图）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/注册页面.png}
+      \caption{登录/注册界面}
 
       \vspace{0.3em}
       % ================================================================
-      % 【截图15】管理员用户管理页面
+      % 【截图13】管理员用户管理页面
       % ================================================================
-      \rule{\textwidth}{2.7cm}
-      \caption{管理员用户管理（待插入：Admin Users 页面截图）}
+      \includegraphics[width=\textwidth,keepaspectratio]{image/管理员用户管理.png}
+      \caption{管理员用户管理}
     \end{figure}
   \end{column}
 \end{columns}
@@ -625,9 +822,9 @@
   \begin{itemize}
     \item \textbf{单细胞数据读取}：支持 CSV/TSV/HDF5/H5AD，含课程 liver 数据适配
     \item \textbf{数据向量化表示}：PCA 嵌入 + L2 归一化 + z-score 标准化
-    \item \textbf{ANN 索引构建}：FAISS Flat、FAISS IVF、Annoy、ChromaDB HNSW（4 种）
+    \item \textbf{ANN 索引构建}：FAISS Flat、FAISS IVF、Annoy（3 种）+ ChromaDB 联合索引
     \item \textbf{相似细胞检索}：向量检索 / 按细胞 ID 检索 / RAG 自然语言检索
-    \item \textbf{至少一种 ANN 算法}：实现 4 种 ANN 算法/检索库，远超最低要求
+    \item \textbf{至少一种 ANN 算法}：实现 3 种 ANN 索引 + ChromaDB 联合索引，远超最低要求
     \item \textbf{Top-K + 返回细胞信息}：Top-K 可调，返回排序序号、细胞名称、距离值、全部元数据、查询耗时
   \end{itemize}
 \end{block}
